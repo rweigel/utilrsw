@@ -22,7 +22,7 @@ def write(fname, data, logger=None):
   if '.pkl' == ext:
     try:
       with open(fname, 'wb') as f:
-        pickle.dump(data, f)
+        pickle.dump(data, f, protocol=4)
       _finish(fname, logger=logger)
       return
     except Exception as e:
