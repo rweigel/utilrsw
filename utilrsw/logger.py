@@ -52,8 +52,6 @@ def logger(name=None,
       if debug_logger:
         print(f"Format called for {self.name}")
 
-      record.pathname = record.pathname.replace(rm_string, "")
-
       levelname_original = record.levelname
       if self.color:
         if debug_logger:
@@ -68,6 +66,9 @@ def logger(name=None,
 
       ret = logging.Formatter.format(self, record)
       record.levelname = levelname_original
+
+      ret = ret.replace(rm_string, "")
+
       return ret
 
     def pad_levelname(self, levelname):
