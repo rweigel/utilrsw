@@ -98,7 +98,7 @@ def _CachedSession(cache_dir, csopts):
 
     # Expire responses after expire_after if no cache control header
     # This causes caching to not work.
-    # "expire_after": expire_after,
+    #"expire_after": 0,
 
     # Cache responses with these status codes
     "allowable_codes": [200],
@@ -127,6 +127,7 @@ def _CachedSession(cache_dir, csopts):
   return session
 
 def _requests_cache_bug():
+  from datetime import timedelta
   import requests_cache
   copts = {
     # Save files in the default user cache dir
@@ -135,7 +136,13 @@ def _requests_cache_bug():
     # Use Cache-Control response headers for expiration, if available
     "cache_control": True,
 
-    "expire_after": 0,
+    # Expire responses after expire_after if no cache control header
+    # Setting to 0 causes caching to not work?
+    # Need to find test that demonstrate the issue.
+    # httpbin test does not seem to show. This may have been
+    # caused by using a cache created by a different version of 
+    # requests-cache.
+    #"expire_after": 0,
 
     # Cache responses with these status codes
     "allowable_codes": [200],
@@ -146,15 +153,22 @@ def _requests_cache_bug():
     "serializer": "json",
 
     # This causes caching to not work unless decode_content = False
-    "backend": "filesystem",
-
     # https://github.com/requests-cache/requests-cache/issues/963
+    "backend": "filesystem",
     "decode_content": False
   }
-  session = requests_cache.CachedSession('/tmp', **copts)
+  session = requests_cache.CachedSession('/tmp/CachedSession/', **copts)
+
+  from datetime import datetime
+  from urllib.parse import quote
 
   #headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
   headers = {'Accept': 'application/json'}
   url = "https://cdaweb.gsfc.nasa.gov/WS/cdasr/1/dataviews/sp_phys/datasets/AC_H2_MFI/orig_data/19970902T000000Z,20240323T230000Z"
+  url = "https://spdf.gsfc.nasa.gov/pub/catalogs/all.xml"
+  url = "https://httpbin.org/cache/10"
   resp = session.get(url, headers=headers)
   print(resp.from_cache)
+
+if __name__ == '__main__':
+  _requests_cache_bug()
