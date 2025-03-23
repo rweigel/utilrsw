@@ -92,7 +92,6 @@ def _diff(cache_dir, cache_key):
 
   subdir = os.path.join(cache_dir, cache_key)
   file_last = os.path.join(subdir, cache_key + ".json")
-  os.makedirs(subdir, exist_ok=True)
 
   file_now = os.path.join(cache_dir, cache_key + ".json")
   try:
@@ -101,6 +100,7 @@ def _diff(cache_dir, cache_key):
     return {"diff": None, "file_now": None, "file_last": None}
 
   if not os.path.exists(file_last):
+    os.makedirs(subdir, exist_ok=True)
     shutil.copyfile(file_now, file_last)
     return {"diff": None, "file_now": file_now, "file_last": None}
 
@@ -113,8 +113,9 @@ def _diff(cache_dir, cache_key):
   timestamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
   file_diff = os.path.join(subdir, f"{cache_key}.{timestamp}.diff.json")
 
-  with open(file_diff, 'w', encoding='utf-8') as f:
-    json.dump(diff, f, indent=2, ensure_ascii=False)
+  if diff != {}:
+    with open(file_diff, 'w', encoding='utf-8') as f:
+      json.dump(diff, f, indent=2, ensure_ascii=False)
 
   shutil.copyfile(file_now, file_last)
 
