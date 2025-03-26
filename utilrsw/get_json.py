@@ -192,7 +192,8 @@ def _CachedSession(cache_dir, csopts):
   #print(csopts_default)
   from datetime import timedelta
   session = requests_cache.CachedSession(cache_dir, **csopts_default)
-  session.cache.reset_expiration(timedelta(seconds=0))
+
+  session.cache.reset_expiration(csopts_default['expire_after'])
 
   return session
 
