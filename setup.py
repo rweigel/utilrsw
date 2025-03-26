@@ -8,7 +8,7 @@ from setuptools import setup, find_packages
 # _decoded_content)
 # See also utilrsw/get_json.py/_requests_cache_bug()
 install_requires = [
-    "requests_cache==1.2",
+    "requests_cache>=1.2.1",
     "deepdiff>=6.3.1",
     "xmltodict",
     "pyyaml"

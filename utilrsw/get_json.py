@@ -164,7 +164,7 @@ def _CachedSession(cache_dir, csopts):
     "cache_control": True,
 
     # Expire responses after expire_after if no cache control header
-    #"expire_after": 0,
+    "expire_after": 0,
 
     # Cache responses with these status codes
     "allowable_codes": [200],
@@ -179,7 +179,7 @@ def _CachedSession(cache_dir, csopts):
     # See https://github.com/requests-cache/requests-cache/issues/963
     "backend": "filesystem",
 
-    "decode_content": True
+    "decode_content": False
   }
 
   if csopts is not None:
@@ -189,7 +189,10 @@ def _CachedSession(cache_dir, csopts):
   if not os.path.isabs(cache_dir):
     cache_dir = os.path.abspath(cache_dir)
 
+  #print(csopts_default)
+  from datetime import timedelta
   session = requests_cache.CachedSession(cache_dir, **csopts_default)
+  session.cache.reset_expiration(timedelta(seconds=0))
 
   return session
 
