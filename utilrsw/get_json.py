@@ -60,7 +60,7 @@ def get_json(url, cache_dir=None, headers=None, timeout=20, max_retries=5, diffs
     stat = os.stat(cache_file)
     stat_dict = {attr: getattr(stat, attr) for attr in dir(stat) if attr.startswith('st_')}
 
-    return {'response': resp,
+    info = {'response': resp,
             'status_code': resp.status_code,
             'url': url,
             'headers': {
@@ -74,13 +74,17 @@ def get_json(url, cache_dir=None, headers=None, timeout=20, max_retries=5, diffs
             'from_cache': resp.from_cache,
             'revalidated': resp.revalidated,
             'is_expired': resp.is_expired,
-            'options': csopts,
+            'cached_session_options': csopts,
+            'user_headers': headers,
+            'timeout': timeout,
+            'max_retries': max_retries,
             'emsg': None,
-            'log': _log(resp, diff),
+            'log': None,
             'diff': diff,
             'data': json_dict
           }
-
+    info['log'] = _log(info)
+    return info
   except Exception as e:
     return {'response': resp, 'data': None, 'diff': None, 'emsg': e, 'log': _log(resp, None)}
 
@@ -122,21 +126,35 @@ def _diff(cache_dir, cache_key):
 
   return {"diff": diff, "file_now": file_now, "file_last": file_last}
 
-def _log(resp, diff):
+def _log(info):
+  resp = info['response']
+  diff = info['diff']
   # https://stackoverflow.com/questions/74317707/how-to-make-deepdiff-output-human-readable
-  req_cache_headers = {k: v for k, v in resp.request.headers.items() if k in ['If-None-Match', 'If-Modified-Since', 'Accept-Endoding', 'Cache-Control']}
-  res_cache_headers = {k: v for k, v in resp.headers.items() if k in ['ETag', 'Last-Modified', 'Cache-Control', 'Vary']}
+  #req_cache_headers = {k: v for k, v in resp.request.headers.items() if k in ['If-None-Match', 'If-Modified-Since', 'Accept-Endoding', 'Cache-Control']}
+  #res_cache_headers = {k: v for k, v in resp.headers.items() if k in ['ETag', 'Last-Modified', 'Cache-Control', 'Vary']}
+  req_cache_headers = resp.request.headers
+  res_cache_headers = resp.headers
   msg = "\n"
-  msg += f"  Status code: {resp.status_code}\n"
-  msg += f"  From cache: {resp.from_cache}\n"
+  msg += f"  status_code: {resp.status_code}\n"
+  msg += f"  from_cache:  {resp.from_cache}\n"
+  msg += f"  from_cache:  {resp.from_cache}\n"
+  msg += f"  revalidated: {resp.revalidated}\n"
+  msg += f"  is_expired:  {resp.is_expired}\n"
+  msg += f"  timeout:     {info['timeout']}\n"
+  msg += f"  max_retries: {info['max_retries']}\n"
+  msg += f"  user headers: {info['user_headers']}\n"
+  msg += f"  cached_session_options: {info['cached_session_options']}\n"
+  msg += f"  cache_key:   {resp.cache_key}\n"
+  msg += f"  cache_file:  {info['cache_file']}\n"
+  msg += f"  cache_file_stat: {info['cache_file_stat']}\n"
   if diff and 'diff' in diff:
     msg += f"  Current cache file: {diff['file_now']}\n"
     if 'file_last' in diff:
       msg += f"  Last cache file:    {diff['file_last']}\n"
-  msg += "  Request Cache-Related Headers:\n"
+  msg += "  Request Headers:\n"
   for k, v in req_cache_headers.items():
     msg += f"    {k}: {v}\n"
-  msg += "  Response Cache-Related Headers:\n"
+  msg += "  Response Headers:\n"
   for k, v in res_cache_headers.items():
     msg += f"    {k}: {v}\n"
   if diff and 'diff' in diff:
@@ -180,7 +198,7 @@ def _CachedSession(cache_dir, csopts):
     # See https://github.com/requests-cache/requests-cache/issues/963
     "backend": "filesystem",
 
-    "decode_content": True
+    "decode_content": False
   }
 
   if csopts is not None:
@@ -242,6 +260,7 @@ def _requests_cache_bug():
 def _demo():
   url = "https://httpbin.org/cache/4"
   #url = "https://httpbin.org/bytes/4"
+  url = "https://spdf.gsfc.nasa.gov/pub/catalogs/all.xml"
   cache_dir = '/tmp/CachedSession/'
   csopts = {
     "use_cache_dir": True,
@@ -253,9 +272,19 @@ def _demo():
     "backend": "filesystem",
     "decode_content": True
   }
-  result = get_json(url, cache_dir, diffs=True, csopts=csopts)
-  import utilrsw
-  utilrsw.print_dict(result)
+  headers = {"Accept-Encoding": None}
+  #resp = get_json(url, cache_dir, diffs=True, csopts=csopts, headers=headers)
+  session = requests_cache.CachedSession('/tmp/CachedSession/', **csopts)
+  resp = session.get(url, headers=headers)
+  print(f"cache_key: {resp.cache_key}")
+  print(f"from_cache: {resp.from_cache}")
+  print(f"revalidated: {resp.revalidated}")
+  print(f"is_expired: {resp.is_expired}")
+  print(resp.cache_key)
+  print("request headers")
+  print(resp.request.headers)
+  print("response headers")
+  print(resp.headers)
 
 if __name__ == '__main__':
   _demo()
