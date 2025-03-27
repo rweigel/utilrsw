@@ -110,6 +110,7 @@ def _diff(cache_dir, cache_key):
     return {"diff": None, "file": file_now, "file_last": None}
 
   diff = deepdiff.DeepDiff(data_last, data_now)
+  diff = json.loads(diff.to_json())
   timestamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
   file_diff = os.path.join(subdir, f"{cache_key}.{timestamp}.diff.json")
 
@@ -143,7 +144,7 @@ def _log(resp, diff):
       msg += "  Cache diff: None\n"
     else:
       msg += "  Cache diff:\n    "
-      json_indented = "\n    ".join(diff['diff'].to_json(indent=2).split('\n'))
+      json_indented = "\n    ".join(json.dumps(diff['diff'], indent=2).split('\n'))
       msg += f"{json_indented}\n"
   return msg.rstrip()
 
