@@ -1,5 +1,6 @@
 import os
 import json
+import time
 import shutil
 import logging
 import datetime
@@ -44,7 +45,7 @@ def get_json(url, cache_dir=None, headers=None, timeout=20, max_retries=5, diffs
           }
 
   try:
-    if resp.headers['Content-Type'] == 'text/xml':
+    if resp.headers['Content-Type'].endswith('xml'):
       text = resp.text
       json_dict = xmltodict.parse(text)
     else:
@@ -56,10 +57,6 @@ def get_json(url, cache_dir=None, headers=None, timeout=20, max_retries=5, diffs
 
     cache_file = os.path.join(cache_dir, resp.cache_key + ".json")
 
-    # https://stackoverflow.com/questions/55638905/how-to-convert-os-stat-result-to-a-json-that-is-an-object
-    stat = os.stat(cache_file)
-    stat_dict = {attr: getattr(stat, attr) for attr in dir(stat) if attr.startswith('st_')}
-
     info = {'response': resp,
             'status_code': resp.status_code,
             'url': url,
@@ -70,7 +67,7 @@ def get_json(url, cache_dir=None, headers=None, timeout=20, max_retries=5, diffs
             'cache_dir': cache_dir,
             'cache_key': resp.cache_key,
             'cache_file': cache_file,
-            'cache_file_stat': stat_dict,
+            'cache_file_stat': _stat_dict(cache_file),
             'from_cache': resp.from_cache,
             'revalidated': resp.revalidated,
             'is_expired': resp.is_expired,
@@ -86,7 +83,22 @@ def get_json(url, cache_dir=None, headers=None, timeout=20, max_retries=5, diffs
     info['log'] = _log(info)
     return info
   except Exception as e:
-    return {'response': resp, 'data': None, 'diff': None, 'emsg': e, 'log': _log(resp, None)}
+    return {'response': resp, 'data': None, 'diff': None, 'emsg': e, 'log': None}
+
+def _stat_dict(fname):
+  # https://stackoverflow.com/questions/55638905/how-to-convert-os-stat-result-to-a-json-that-is-an-object
+  stat = os.stat(fname)
+  stat_dict_all = {attr: getattr(stat, attr) for attr in dir(stat) if attr.startswith('st_')}
+  # Convert times to the desired format
+  stat_dict = {}
+  fmt = '%a, %d %b %Y %H:%M:%S'
+  for time_attr in ['st_atime', 'st_mtime', 'st_ctime']:
+    if time_attr in stat_dict_all:
+      gmtime = time.gmtime(stat_dict_all[time_attr])
+      mircos = int((stat_dict_all[time_attr] % 1) * 1_000_000)
+      formatted_time = time.strftime(fmt, gmtime)
+      stat_dict[time_attr] = f"{formatted_time}.{mircos:06d} GMT"
+  return stat_dict
 
 def _diff(cache_dir, cache_key):
 
@@ -137,7 +149,6 @@ def _log(info):
   msg = "\n"
   msg += f"  status_code: {resp.status_code}\n"
   msg += f"  from_cache:  {resp.from_cache}\n"
-  msg += f"  from_cache:  {resp.from_cache}\n"
   msg += f"  revalidated: {resp.revalidated}\n"
   msg += f"  is_expired:  {resp.is_expired}\n"
   msg += f"  timeout:     {info['timeout']}\n"
@@ -146,7 +157,10 @@ def _log(info):
   msg += f"  cached_session_options: {info['cached_session_options']}\n"
   msg += f"  cache_key:   {resp.cache_key}\n"
   msg += f"  cache_file:  {info['cache_file']}\n"
-  msg += f"  cache_file_stat: {info['cache_file_stat']}\n"
+  cache_file_stat = ""
+  for key in info['cache_file_stat'].keys():
+    cache_file_stat += f"    {key}: {info['cache_file_stat'][key]}\n"
+  msg += f"  cache_file_stat: \n{cache_file_stat}"
   if diff and 'diff' in diff:
     msg += f"  Current cache file: {diff['file_now']}\n"
     if 'file_last' in diff:
@@ -198,7 +212,7 @@ def _CachedSession(cache_dir, csopts):
     # See https://github.com/requests-cache/requests-cache/issues/963
     "backend": "filesystem",
 
-    "decode_content": False
+    "decode_content": True
   }
 
   if csopts is not None:
@@ -211,7 +225,7 @@ def _CachedSession(cache_dir, csopts):
   #print(csopts_default)
   from datetime import timedelta
   session = requests_cache.CachedSession(cache_dir, **csopts_default)
-
+  #session.cache.clear()
   return session
 
 def _requests_cache_bug():
