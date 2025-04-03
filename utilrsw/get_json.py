@@ -198,7 +198,7 @@ def _CachedSession(cache_dir, csopts):
     # See https://github.com/requests-cache/requests-cache/issues/963
     "backend": "filesystem",
 
-    "decode_content": False
+    "decode_content": True
   }
 
   if csopts is not None:
