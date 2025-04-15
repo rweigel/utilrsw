@@ -11,6 +11,8 @@ import deepdiff
 
 import requests_cache
 from requests.adapters import HTTPAdapter
+#logging.basicConfig(level='DEBUG')
+#import http; http.client.HTTPConnection.debuglevel=5
 
 # TODO: Use
 #  https://stackoverflow.com/a/71775172/1491619
@@ -185,9 +187,9 @@ def _CachedSession(cache_dir, csopts):
   # https://requests-cache.readthedocs.io/en/stable/#settings
   # https://requests-cache.readthedocs.io/en/stable/user_guide/headers.html
 
-  logging.getLogger("requests").setLevel(logging.ERROR)
-  logging.getLogger('requests_cache').setLevel(logging.ERROR)
-  logging.getLogger("urllib3").setLevel(logging.ERROR)
+  #logging.getLogger("requests").setLevel(logging.ERROR)
+  #logging.getLogger('requests_cache').setLevel(logging.ERROR)
+  #logging.getLogger("urllib3").setLevel(logging.ERROR)
 
   csopts_default = {
     # Save files in the default user cache dir
