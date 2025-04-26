@@ -59,7 +59,8 @@ def get_json(url, cache_dir=None, headers=None, timeout=20, max_retries=5, diffs
 
     cache_file = os.path.join(cache_dir, resp.cache_key + ".json")
 
-    info = {'response': resp,
+    info = {
+            'response': resp,
             'status_code': resp.status_code,
             'url': url,
             'headers': {

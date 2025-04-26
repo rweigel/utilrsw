@@ -2,7 +2,7 @@ import re
 from datetime import datetime
 
 def pad_iso8601(t):
-  """Pad a restricted ISO 8601 time string t picoseconds."""
+  """Pad a restricted ISO 8601 time string to picoseconds."""
 
   allowed = ['yyyy-mm-ddThh:mm:ss.mmmuuunnnppp[Z]',
               'yyyy-mm-ddThh:mm:ss.mmmuuunnn[Z]',
@@ -12,9 +12,9 @@ def pad_iso8601(t):
               'yyyy-mm-ddThh:mm:ss[Z]',
               'yyyy-mm-ddThh:mm[Z]',
               'yyyy-mm-ddThh[Z]',
-              'yyyy-mm-dd[Z]',
-              'yyyy-mm[Z]',
-              'yyyy[Z]'
+              'yyyy-mm-dd[Z]', # Not ISO 8601 but valid xml date https://www.w3.org/TR/xmlschema-2/#date
+              'yyyy-mm[Z]',    # Not ISO 8601 but valid xml date
+              'yyyy[Z]'        # Not ISO 8601 but valid xml date
             ]
 
   Z = ''
@@ -75,6 +75,6 @@ def pad_iso8601(t):
   try:
     datetime.strptime(t[0:n], fmt)
   except:
-    raise ValueError(f"Could not parse given time string '{t[0:n]}' with inferred format '{fmt}'.")
+    raise ValueError(f"datetime.strptime(t, f) could not parse given time string t = '{t[0:n]}' with inferred format f = '{fmt}'.")
 
   return t + Z

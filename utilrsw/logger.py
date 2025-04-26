@@ -52,6 +52,9 @@ def logger(name=None,
       if debug_logger:
         print(f"Format called for {self.name}")
 
+      if hasattr(record, "threadName"):
+        record.threadName = record.threadName.replace("ThreadPoolExecutor-0_", "T")
+
       levelname_original = record.levelname
       if self.color:
         if debug_logger:
