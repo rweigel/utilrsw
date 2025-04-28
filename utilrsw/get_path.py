@@ -1,4 +1,8 @@
 def get_path(obj, path):
+
+  if obj is None:
+    return None
+
   if isinstance(path, str):
     if '.' in path:
       path = path.split('.')
@@ -8,8 +12,57 @@ def get_path(obj, path):
   for key in path:
     if obj is None:
       return None
-    if key not in obj:
-      return None
+
+    if not isinstance(obj, dict):
+      if not isinstance(obj, list):
+        if not isinstance(obj, tuple):
+          return None
+
+    if isinstance(key, int):
+      if not isinstance(obj, list):
+        return None
+      if key < 0:
+        key = len(obj) + key
+      if key < 0 or key > len(obj) - 1:
+        return None
+
+    if isinstance(obj, dict):
+      if key not in obj:
+        return None
+
     obj = obj[key]
 
   return obj
+
+def get_path_test():
+  obj = {
+    "a": {
+      "b": {
+        "c": [1, 2, 3],
+        "d": {
+          "e": "hello"
+        }
+      }
+    }
+  }
+
+  assert get_path(obj, "a.b.c") == [1, 2, 3]
+  assert get_path(obj, "a.x") is None
+  assert get_path(obj, "a.x.y") is None
+
+  assert get_path(obj, ["a", "b", "c"]) == [1, 2, 3]
+  assert get_path(obj, ["a", "b", "d"]) == {"e": "hello"}
+
+  assert get_path(obj, ["a", "b", "c", 0]) == 1
+  assert get_path(obj, ["a", "b", "c", -3]) == 1
+  assert get_path(obj, ["a", "b", "c", 1]) == 2
+  assert get_path(obj, ["a", "b", "c", -2]) == 2
+  assert get_path(obj, ["a", "b", "c", 2]) == 3
+  assert get_path(obj, ["a", "b", "c", -1]) == 3
+
+  assert get_path(obj, ["a", "b", "c", 3]) is None
+  assert get_path(obj, ["a", "b", "c", -4]) is None
+
+if __name__ == "__main__":
+  get_path_test()
+  #print("All tests passed.")
