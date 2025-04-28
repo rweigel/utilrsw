@@ -71,7 +71,7 @@ def get_file(url, logger=None, url2file=None, use_cache=True, cache_dir=None):
 
   return file_name
 
-def get_conditional(url, file=None, stream=False):
+def get_conditional(url, file=None, stream=False, progress=False, logger=None):
 
   if file is None:
     file = url.split('/')[-1]
@@ -79,6 +79,9 @@ def get_conditional(url, file=None, stream=False):
     file = url.split('/')[-2]
 
   import requests
+  from requests.adapters import HTTPAdapter
+  from requests.packages.urllib3.util.retry import Retry
+
   from datetime import datetime, timezone
 
   def format_http_date(timestamp):
@@ -89,7 +92,8 @@ def get_conditional(url, file=None, stream=False):
   # Create output directory if needed
   if not os.path.exists(os.path.dirname(file)):
     os.makedirs(os.path.dirname(file))
-    print(f"Created directory: {os.path.dirname(file)}")
+    if logger is not None:
+      logger.info(f"Creating directory: {os.path.dirname(file)}")
 
   headers = {}
   #headers['Accept-Encoding'] = 'gzip'
@@ -100,9 +104,23 @@ def get_conditional(url, file=None, stream=False):
     # Format the time as HTTP-date (RFC 7231)
     headers['If-Modified-Since'] = format_http_date(last_modified_time)
 
+  # https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html
+  retry_strategy = Retry(
+      connect=3,
+      read=3,
+      status_forcelist=[429],
+      method_whitelist=["GET"],
+      backoff_factor=1
+  )
+  adapter = HTTPAdapter(max_retries=retry_strategy)
+  session = requests.Session()
+  session.mount("https://", adapter)
+  session.mount("http://", adapter)
+
   # Perform the GET request with conditional headers
   try:
-    response = requests.get(url, headers=headers, stream=stream)
+    #response = requests.get(url, headers=headers, stream=stream)
+    response = session.get(url, headers=headers, stream=stream)
     response.raise_for_status()
   except Exception as e:
     status_code = getattr(e.response, 'status_code', -1)
@@ -110,6 +128,8 @@ def get_conditional(url, file=None, stream=False):
     # using e as below for message shows a ?https at the end of the url, which
     # is misleading because it was not the actual url attempted.
     emsg = f"HTTP status code {status_code} and reason '{reason}' for {url}"
+    if logger is not None:
+      logger.error(emsg)
     return {'response': e.response,
             'data': None,
             'emsg': emsg
@@ -118,30 +138,39 @@ def get_conditional(url, file=None, stream=False):
   content = None
 
   file_tmp = file + "." + secrets.token_hex(4) + ".tmp"
+  emsg = None
   if response.status_code == 200:
+
     if stream:
       # Stream the file to disk
-      print(f"Streaming to: {file_tmp}")
+      if logger is not None:
+        logger.info(f"Streaming to: {file_tmp}")
       total_size = int(response.headers.get('content-length', 0))
       downloaded_size = 0
-      print(f"Total size: {total_size} bytes")
+      if logger is not None:
+        logger.info(f"Total size: {total_size} bytes")
       with open(file_tmp, 'wb') as f:
         for chunk in response.iter_content(chunk_size=8192):
           if chunk:  # Filter out keep-alive chunks
             f.write(chunk)
             downloaded_size += len(chunk)
             progress = (downloaded_size / total_size) * 100 if total_size else 0
-            #print(f"Progress: {progress:.2f}%")
-            print(f"\rProgress: {progress:.0f}%", end="")
-      print(f"Streamed to: {file_tmp}")
+            if progress:
+              print(f"\rProgress: {progress:.0f}%", end="")
+      if logger is not None:
+        logger.info(f"Streamed: {downloaded_size} bytes to {file_tmp}")
+
     else:
       # Read the entire file into memory and save it
-      print(f"Reading: {file}")
+      if logger is not None:
+        logger.info(f"Reading: {file}")
       with open(file, 'wb') as f:
-        print(f"Writing: {file}")
+        if logger is not None:
+          logger.info(f"Writing: {file}")
         content = response.content
         f.write(content)
-        print(f"Wrote: {file}")
+        if logger is not None:
+          logger.info(f"Wrote: {file}")
 
     try:
       os.rename(file_tmp, file)
@@ -150,14 +179,18 @@ def get_conditional(url, file=None, stream=False):
       raise e
 
   elif response.status_code == 304:
-    print("File not modified.")
+    if logger is not None:
+      logger.info(f"File not modified: {file}")
     if not stream:
       with open(file, 'rb') as f:
-        print(f"Reading: {file}")
+        if logger is not None:
+          logger.info(f"Reading: {file}")
         content = f.read()
+
   else:
-    # Handle other HTTP responses
-    print(f"Failed to fetch file. HTTP status code: {response.status_code}")
+    emsg = f"HTTP status code {response.status_code} and reason '{response.reason}' for {url}"
+    if logger is not None:
+      logger.error(emsg)
 
   info = {'response': response,
           'data': content,
@@ -169,5 +202,10 @@ def get_conditional(url, file=None, stream=False):
           },
           'cache_file': file
   }
+  if emsg is not None:
+    info['emsg'] = emsg
+
+  if logger is not None:
+    logger.debug(f"Returning info: {info}")
 
   return info
