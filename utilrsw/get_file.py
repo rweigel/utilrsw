@@ -71,7 +71,7 @@ def get_file(url, logger=None, url2file=None, use_cache=True, cache_dir=None):
 
   return file_name
 
-def get_conditional(url, file=None, stream=False, progress=False, logger=None):
+def get_conditional(url, file=None, gzip=False, stream=False, progress=False, logger=None):
 
   if file is None:
     file = url.split('/')[-1]
@@ -96,7 +96,8 @@ def get_conditional(url, file=None, stream=False, progress=False, logger=None):
       logger.info(f"Creating directory: {os.path.dirname(file)}")
 
   headers = {}
-  #headers['Accept-Encoding'] = 'gzip'
+  if gzip:
+    headers['Accept-Encoding'] = 'gzip'
 
   if os.path.exists(file):
     # Get the last modified time of the file
