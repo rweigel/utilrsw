@@ -11,11 +11,13 @@ import deepdiff
 
 import requests_cache
 from requests.adapters import HTTPAdapter
+
 #logging.basicConfig(level='DEBUG')
 #import http; http.client.HTTPConnection.debuglevel=5
 
 # TODO: Use
 #  https://stackoverflow.com/a/71775172/1491619
+#  To serialize the response object to a separate file.
 
 def get_json(url, cache_dir=None, headers=None, timeout=20, max_retries=5, diffs=False, csopts=None):
 
@@ -57,7 +59,9 @@ def get_json(url, cache_dir=None, headers=None, timeout=20, max_retries=5, diffs
     if diffs:
       diff = _diff(cache_dir, resp.cache_key)
 
-    cache_file = os.path.join(cache_dir, resp.cache_key + ".json")
+    cache_file = None
+    if resp.cache_key is not None:
+      cache_file = os.path.join(cache_dir, resp.cache_key + ".json")
 
     info = {
             'response': resp,
@@ -86,9 +90,12 @@ def get_json(url, cache_dir=None, headers=None, timeout=20, max_retries=5, diffs
     info['log'] = _log(info)
     return info
   except Exception as e:
+    raise e
     return {'response': resp, 'data': None, 'diff': None, 'emsg': e, 'log': None}
 
 def _stat_dict(fname):
+  if fname is None:
+    return None
   # https://stackoverflow.com/questions/55638905/how-to-convert-os-stat-result-to-a-json-that-is-an-object
   stat = os.stat(fname)
   stat_dict_all = {attr: getattr(stat, attr) for attr in dir(stat) if attr.startswith('st_')}
@@ -160,10 +167,11 @@ def _log(info):
   msg += f"  cached_session_options: {info['cached_session_options']}\n"
   msg += f"  cache_key:   {resp.cache_key}\n"
   msg += f"  cache_file:  {info['cache_file']}\n"
-  cache_file_stat = ""
-  for key in info['cache_file_stat'].keys():
-    cache_file_stat += f"    {key}: {info['cache_file_stat'][key]}\n"
-  msg += f"  cache_file_stat: \n{cache_file_stat}"
+  if info['cache_file'] is not None:
+    cache_file_stat = ""
+    for key in info['cache_file_stat'].keys():
+      cache_file_stat += f"    {key}: {info['cache_file_stat'][key]}\n"
+    msg += f"  cache_file_stat: \n{cache_file_stat}"
   if diff and 'diff' in diff:
     msg += f"  Current cache file: {diff['file_now']}\n"
     if 'file_last' in diff:

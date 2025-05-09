@@ -49,6 +49,9 @@ tock = timer.tock
 from . import trim as trim
 trim = trim.trim
 
+from . import utc_now as utc_now
+utc_now = utc_now.utc_now
+
 from . import write as write
 write = write.write
 
