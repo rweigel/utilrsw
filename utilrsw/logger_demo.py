@@ -1,28 +1,34 @@
 import os
 import logging
 
-import cdawmeta
+from utilrsw import logger
+debug_logger = True
+
 log_dir = os.path.dirname(__file__)
-
-config0 = {
-  'name': 'logger0',
-  'color': True,
-  'debug_logger': True
-}
-
-logger0 = cdawmeta.util.logger(**config0)
-logger0.setLevel(logging.DEBUG)
-#logger0.info('Logger0 info message')
-logger0.debug('Logger0 debug message')
-exit()
-
-logger0 = cdawmeta.util.logger(**config0)
-logger0.info('Logger0 info message')
-
-print('')
 
 config1 = {
   'name': 'logger1',
+  # Defaults are logger_demo.log and logger_demo.errors.log
+  # (Calling file name is used if not provided.)
+  'file_log': os.path.join(log_dir, 'logger_demo1.log'),
+  'file_error': os.path.join(log_dir, 'logger_demo1.errors.log'),
+  'color': True,
+  'debug_logger': debug_logger
+}
+
+logger0 = logger(**config1)
+logger0.setLevel(logging.DEBUG)
+logger0.info('"logger1 info message"')
+logger0.error('"logger1 error message"')
+logger0.debug('"logger1 debug message"')
+
+print('Wrote logger.log and logger.errors.log')
+
+if debug_logger:
+  print('\n')
+
+config2 = {
+  'name': 'logger2',
   'file_log': os.path.join(log_dir, 'logger_demo2.log'),
   'file_error': os.path.join(log_dir, 'logger_demo2.errors.log'),
   'console_format': '%(asctime)s p%(process)s %(pathname)s:%(lineno)d %(levelname)s - %(message)s',
@@ -30,13 +36,11 @@ config1 = {
   'datefmt': '%Y-%m-%dT%H:%M:%S',
   'rm_string': log_dir + '/',
   'color': True,
-  'debug_logger': False
+  'debug_logger': debug_logger
 }
 
-logger2 = cdawmeta.util.logger(**config1)
-logger2.info('Logger2 info message')
-logger2.error('Logger2 error message')
-
-
-
-
+logger2 = logger(**config2)
+logger2.info('"logger2 info message"')
+logger2.error('"logger2 error message"')
+logger2.debug('"logger2 debug message"')
+print('Wrote logger2.log and logger2.errors.log')

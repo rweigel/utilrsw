@@ -19,23 +19,26 @@ def logger(name=None,
            disable_existing_loggers=False,
            debug_logger=False):
 
+  if debug_logger:
+    frame = inspect.currentframe()
+    kwargs = frame.f_locals
+
   if utc_timestamps:
     logging.Formatter.converter = time.gmtime
 
   class CustomFormatter(logging.Formatter):
-
     converter = datetime.datetime.fromtimestamp
 
     def __init__(self, datefmt=datefmt, color=color, name=name, *args, **kwargs):
+      if debug_logger:
+        print("  logger.CustomFormatter().__init__ called for", name)
+        print(f"    self.name: '{name}'")
+        print(f"    self.color: '{color}'")
+        print(f"    self.datefmt: '{datefmt}'")
       super(CustomFormatter, self).__init__(*args, **kwargs)
       self.color = color
       self.datefmt = datefmt
       self.name = name
-      if debug_logger:
-        print("__init__ called for", self.name)
-        print("  self.name", self.name)
-        print("  self.color", self.color)
-        print("  self.datefmt", self)
 
     def formatTime(self, record, datefmt=None):
       ct = self.converter(record.created)
@@ -50,7 +53,7 @@ def logger(name=None,
     def format(self, record):
 
       if debug_logger:
-        print(f"Format called for {self.name}")
+        print(f"  logger.CustomFormatter().format called for {self.name}")
 
       if hasattr(record, "threadName"):
         record.threadName = record.threadName.replace("ThreadPoolExecutor-0_", "T")
@@ -58,14 +61,14 @@ def logger(name=None,
       levelname_original = record.levelname
       if self.color:
         if debug_logger:
-          print(f'  Applying color to record.levelname = "{record.levelname}"')
+          print(f"    Applying color to record.levelname = '{record.levelname}'")
         record.levelname = self.color_levelname(record.levelname)
         if debug_logger:
-          print('  record.levelname:', record.levelname)
+          print(f"    record.levelname: '{record.levelname}'")
       else:
         record.levelname = self.pad_levelname(record.levelname)
         if debug_logger:
-          print(f'  Not applying color to record.levelname = "{record.levelname}"')
+          print(f"    Not applying color to record.levelname = '{record.levelname}'")
 
       ret = logging.Formatter.format(self, record)
       record.levelname = levelname_original
@@ -208,18 +211,22 @@ def logger(name=None,
       }
   }
 
-  if name is not None:
-    msgx = f"for {name} "
   if debug_logger:
-    print(f"---\nLogger with name='{name}' configuration:")
-    print(f'  Logging output {msgx}to: {file_log}')
-    print("---\n")
+    print(f"Initializing logger with name='{name}'")
+    print("  kwargs:")
+    for key, value in kwargs.items():
+      if key == 'frame':
+        continue
+      print(f"    {key}: {value}")
+
+    print(f'  Logging output to: {file_log}')
 
   if file_error:
     if debug_logger:
-      print(f'  Logging errors {msgx}to: {file_error}')
+      print(f'  Logging errors to: {file_error}')
   else:
     del config['handlers']['file_stderr']
+
 
   logging.config.dictConfig(config)
 

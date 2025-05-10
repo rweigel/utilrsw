@@ -11,7 +11,8 @@ install_requires = [
     "requests_cache>=1.2.1",
     "deepdiff>=6.3.1",
     "xmltodict",
-    "pyyaml"
+    "pyyaml",
+    "lxml"
 ]
 
 setup(

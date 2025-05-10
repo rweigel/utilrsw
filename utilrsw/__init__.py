@@ -39,8 +39,14 @@ read = read.read
 from . import rm_path as rm_path
 rm_path = rm_path.rm_path
 
+from . import rm_if_empty as rm_if_empty
+rm_if_empty = rm_if_empty.rm_if_empty
+
 from . import sort_dict as sort_dict
 sort_dict = sort_dict.sort_dict
+
+from . import svglinks as svglinks
+svglinks = svglinks.svglinks
 
 from . import timer as timer
 tick = timer.tick
