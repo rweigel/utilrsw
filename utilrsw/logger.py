@@ -9,6 +9,7 @@ import logging.config
 def logger(name=None,
            console_format=u"%(asctime)s %(levelname)s %(name)s %(message)s",
            file_format=u"%(asctime)s %(levelname)s %(name)s %(message)s",
+           log_dir=None,
            file_log=None,
            file_error=None,
            datefmt="%Y-%m-%dT%H:%M:%S.%f",
@@ -114,6 +115,12 @@ def logger(name=None,
 
   if file_error is None:
     file_error = os.path.splitext(file_log)[0] + ".errors.log"
+
+  if log_dir is not None:
+    if not os.path.isabs(file_log):
+      file_log = os.path.join(log_dir, os.path.basename(file_log))
+    if not os.path.isabs(file_error):
+      file_error = os.path.join(log_dir, os.path.basename(file_error))
 
   if rm_existing:
     if os.path.exists(file_log):

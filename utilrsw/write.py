@@ -1,11 +1,11 @@
-import os
-import csv
-import json
-import pickle
-
-import utilrsw
-
 def write(fname, data, logger=None):
+
+  import os
+  import csv
+  import json
+  import pickle
+
+  import utilrsw
 
   utilrsw.mkdir(os.path.dirname(fname), logger=logger)
 
@@ -28,6 +28,17 @@ def write(fname, data, logger=None):
     except Exception as e:
       emsg = f"pickle.dump() raised: {e}"
       _finish(fname, logger=logger, e=e, emsg=emsg)
+
+  if '.csv' == ext and type(data).__name__ == "DataFrame":
+    # type(data)... used instead of isinstance(data, pandas.DataFrame),
+    # so no pandas import needed.
+    try:
+      data.to_csv(fname, index=False, date_format="%Y-%m-%dT%H:%M:%S.%fZ")
+      _finish(fname, logger=logger)
+    except Exception as e:
+      emsg = f"data.to_csv() raised: {e}"
+      _finish(fname, logger=logger, e=e, emsg=emsg)
+    return
 
   iscsv = isinstance(data, list) or isinstance(data, tuple)
   if '.csv' == ext and iscsv:
@@ -59,6 +70,7 @@ def write(fname, data, logger=None):
             except Exception as e:
               print(row)
               raise e
+    return
 
   if '.json' == ext:
     try:
@@ -66,9 +78,11 @@ def write(fname, data, logger=None):
     except Exception as e:
       emsg = f"json.dumps() raised: {e}"
       _finish(fname, logger=logger, e=e, emsg=emsg)
+    return
 
   if not isinstance(data, str):
-    raise ValueError(f"Unknown data type: {type(data)} for file extension '{ext}'")
+    emsg = f"Unknown data type: {type(data)} for file extension '{ext}'"
+    raise ValueError()
 
   try:
     f = open(fname, 'w', encoding='utf-8')

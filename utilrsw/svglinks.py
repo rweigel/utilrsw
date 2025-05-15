@@ -64,7 +64,9 @@ def svglinks(file, links=None, link_prefix="", link_attribs=None, file_out=None,
         print_("    No link found. Skipping.")
         continue
 
-      attrib = {'href': link}
+      attrib = {
+        'href': link
+        }
       if link_attribs is not None:
         attrib.update(link_attribs)
 
@@ -80,6 +82,11 @@ def svglinks(file, links=None, link_prefix="", link_attribs=None, file_out=None,
 
       # Append the <g> element as a child of the <a> element
       a_element.append(element)
+
+      # Add a <title> element as the first child of the <g> element
+      title_element = etree.Element('title')
+      title_element.text = id
+      element.insert(0, title_element)
 
   # Convert the modified SVG back to a string
   modified_svg = etree.tostring(root, encoding='unicode', pretty_print=True)

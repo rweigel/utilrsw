@@ -42,6 +42,9 @@ rm_path = rm_path.rm_path
 from . import rm_if_empty as rm_if_empty
 rm_if_empty = rm_if_empty.rm_if_empty
 
+from . import servefs as servefs
+servefs = servefs.servefs
+
 from . import sort_dict as sort_dict
 sort_dict = sort_dict.sort_dict
 
