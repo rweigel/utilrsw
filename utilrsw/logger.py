@@ -24,9 +24,6 @@ def logger(name=None,
     frame = inspect.currentframe()
     kwargs = frame.f_locals
 
-  if utc_timestamps:
-    logging.Formatter.converter = time.gmtime
-
   class CustomFormatter(logging.Formatter):
     converter = datetime.datetime.fromtimestamp
 
@@ -105,22 +102,40 @@ def logger(name=None,
         return '\033[95m' + self.pad_levelname(levelname) + '\033[0m'
       return levelname
 
+  class ExcludeErrorsFilter(logging.Filter):
+    def filter(self, record):
+      """Only show log messages with log level below ERROR."""
+      return record.levelno < logging.ERROR
+
+  def get_filename(filename, ext):
+    if filename is None:
+      frame = inspect.stack()[2]
+      module = inspect.getmodule(frame[0])
+      file_log = os.path.splitext(module.__file__)[0] + ext
+      if log_dir is not None:
+        file_log_dir = os.path.dirname(file_log)
+        file_log_name = os.path.basename(file_log)
+        file_log = os.path.join(file_log_dir, log_dir, file_log_name)
+    else:
+      if os.path.isabs(filename):
+        file_log = filename
+      else:
+        frame = inspect.stack()[2]
+        module = inspect.getmodule(frame[0])
+        file_log = os.path.join(os.path.dirname(module.__file__), filename)
+    return file_log
+
+  if utc_timestamps:
+    logging.Formatter.converter = time.gmtime
+
   if name is None:
     name = __name__ # Use top-level module name
 
-  if file_log is None:
-    frame = inspect.stack()[1]
-    module = inspect.getmodule(frame[0])
-    file_log = os.path.splitext(module.__file__)[0] + ".log"
-
+  file_log = get_filename(file_log, ".log")
   if file_error is None:
     file_error = os.path.splitext(file_log)[0] + ".errors.log"
-
-  if log_dir is not None:
-    if not os.path.isabs(file_log):
-      file_log = os.path.join(log_dir, os.path.basename(file_log))
-    if not os.path.isabs(file_error):
-      file_error = os.path.join(log_dir, os.path.basename(file_error))
+  else:
+    file_error = get_filename(file_error, ".errors.log")
 
   if rm_existing:
     if os.path.exists(file_log):
@@ -133,11 +148,6 @@ def logger(name=None,
     mkdir(os.path.dirname(file_log))
   if file_error:
     mkdir(os.path.dirname(file_error))
-
-  class _ExcludeErrorsFilter(logging.Filter):
-    def filter(self, record):
-      """Only show log messages with log level below ERROR."""
-      return record.levelno < logging.ERROR
 
   handlers = [
             'console_stderr',
@@ -154,7 +164,7 @@ def logger(name=None,
       'disable_existing_loggers': disable_existing_loggers,
       'filters': {
           'exclude_errors': {
-              '()': _ExcludeErrorsFilter
+              '()': ExcludeErrorsFilter
           }
       },
       'formatters': {

@@ -74,7 +74,9 @@ def write(fname, data, logger=None):
 
   if '.json' == ext:
     try:
-      data = json.dumps(data, indent=2, ensure_ascii=False)
+      with open(fname, "w") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+      _finish(fname, logger=logger)
     except Exception as e:
       emsg = f"json.dumps() raised: {e}"
       _finish(fname, logger=logger, e=e, emsg=emsg)
@@ -82,7 +84,7 @@ def write(fname, data, logger=None):
 
   if not isinstance(data, str):
     emsg = f"Unknown data type: {type(data)} for file extension '{ext}'"
-    raise ValueError()
+    raise ValueError(emsg)
 
   try:
     f = open(fname, 'w', encoding='utf-8')
