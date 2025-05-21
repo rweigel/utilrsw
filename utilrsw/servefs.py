@@ -15,7 +15,7 @@ def servefs(app=None, run=True, root=".", host="0.0.0.0", port=6001, workers=1):
   import logging
   logging.basicConfig()
   logger = logging.getLogger("servefs")
-  #logger.setLevel(logging.DEBUG)
+  logger.setLevel(logging.DEBUG)
 
   if app is None:
     app = FastAPI()
@@ -78,7 +78,7 @@ def servefs(app=None, run=True, root=".", host="0.0.0.0", port=6001, workers=1):
 
     server_path = html.escape(urllib.parse.unquote(path), quote=False)
 
-    return HTMLResponse(content=_dir_listing(server_path, items))
+    return HTMLResponse(content=_dir_listing(full_path, server_path, items))
 
   @app.head("{path:path}")
   async def head_request(path: str = ""):
@@ -125,13 +125,13 @@ def servefs(app=None, run=True, root=".", host="0.0.0.0", port=6001, workers=1):
   </html>
   """.replace("\n  ", "\n")[1:]
 
-  def _dir_listing(server_path, items):
+  def _dir_listing(full_path, server_path, items):
 
     items.sort(key=lambda a: a.lower())
     rows = []
 
     for name in items:
-        fullname = pathlib.Path(name)
+        fullname = pathlib.Path(full_path / name)
         size = fullname.stat().st_size
         displayname = linkname = name
 
