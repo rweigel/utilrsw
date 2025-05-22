@@ -25,7 +25,7 @@ def servefs(app=None, root="."):
   import logging
   logging.basicConfig()
   logger = logging.getLogger("servefs")
-  #logger.setLevel(logging.DEBUG)
+  logger.setLevel(logging.DEBUG)
 
   if app is None:
     app = FastAPI()
