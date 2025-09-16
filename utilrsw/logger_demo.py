@@ -17,8 +17,6 @@ config1 = {
 }
 
 logger0 = logger(**config1)
-logger0.setLevel(logging.DEBUG)
-logger0.info('"logger1 info message"')
 logger0.error('"logger1 error message"')
 logger0.debug('"logger1 debug message"')
 

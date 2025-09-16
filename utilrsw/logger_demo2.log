@@ -1,3 +1,0 @@
-2025-05-15T03:44:44Z INFO  logger2 "logger2 info message"
-2025-05-15T03:44:44Z ERROR logger2 "logger2 error message"
-2025-05-15T03:44:44Z DEBUG logger2 "logger2 debug message"

@@ -3,6 +3,8 @@ import json
 import yaml
 import pprint
 
+import numpy
+
 import utilrsw
 
 def print_dict(d, sort_dicts=False, indent=0, style=None):
@@ -47,6 +49,24 @@ def format_dict(d, sort_dicts=False, indent=0, style=None):
           else:
             # TODO: If element is string, they are not quoted in the following. Fix this.
             msg += _print_to_string(f": [{value[0]}, {value[1]}, ..., {value[len(value)-2]}, {value[len(value)-1]} ({len(value)} elements)")
+        elif isinstance(value, numpy.ndarray):
+          if value.ndim == 1:
+            if len(value) < 5:
+              msg += _print_to_string(f": {value.tolist()}")
+            else:
+              msg += _print_to_string(f": [{value[0]}, {value[1]}, ..., {value[len(value)-2]}, {value[len(value)-1]}] ({len(value)} elements)")
+          elif value.ndim == 2:
+            if value.shape[0] < 5 and value.shape[1] < 5:
+              msg += _print_to_string(f": {value.tolist()}")
+            else:
+              pad = ' ' * (indent + len(key) + 2)
+              msg += _print_to_string(f": [{value[0,:]}]")
+              msg += f"{pad}..."
+              msg += f"\n{pad}[{value[value.shape[0]-1,:]}]"
+              msg += f"\n{pad}({value.shape[0]} rows, {value.shape[1]} columns)"
+              msg += "\n"
+          else:
+            msg += _print_to_string(f": {value}")
         else:
           msg += _print_to_string(f": {value}")
   return msg

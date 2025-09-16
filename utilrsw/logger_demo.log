@@ -1,3 +1,0 @@
-2025-05-10T12:07:17.240141Z INFO  logger1 "logger1 info message"
-2025-05-10T12:07:17.240252Z DEBUG logger1 "logger1 debug message"
-2025-05-10T12:07:17.240303Z ERROR logger1 "logger1 error message"

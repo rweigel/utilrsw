@@ -49,7 +49,6 @@ def logger(name=None,
       return s
 
     def format(self, record):
-
       if debug_logger:
         print(f"  logger.CustomFormatter().format called for {self.name}")
 
@@ -129,10 +128,21 @@ def logger(name=None,
     logging.Formatter.converter = time.gmtime
 
   if name is None:
-    name = __name__ # Use top-level module name
+    if debug_logger:
+      print("No logger name provided, using inspect.stack() to determine name.")
+      for idx, frame in enumerate(inspect.stack()):
+        print(f"  Frame {idx}: {frame.frame}")
+        #module = inspect.getmodule(frame[0])
+        #print(f"    Module: {module}")
+    frame = inspect.stack()[1]
+    module = inspect.getmodule(frame[0])
+    if module and hasattr(module, '__file__'):
+      name = os.path.basename(module.__file__)
+    else:
+      name = '__main__'
 
   file_log = get_filename(file_log, ".log")
-  if file_error is None:
+  if not file_error:
     file_error = os.path.splitext(file_log)[0] + ".errors.log"
   else:
     file_error = get_filename(file_error, ".errors.log")
@@ -215,7 +225,8 @@ def logger(name=None,
       'loggers': {
           name: {
               'level': 'DEBUG',
-              'handlers': handlers
+              'handlers': handlers,
+              'propagate': False
           }
       },
       'xroot': {

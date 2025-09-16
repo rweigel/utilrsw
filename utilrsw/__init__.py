@@ -20,6 +20,9 @@ file_parts = file_parts.file_parts
 from . import flatten_dicts as flatten_dicts
 flatten_dicts = flatten_dicts.flatten_dicts
 
+from . import format_exponent as format_exponent
+from .format_exponent import format_exponent
+
 from . import logger as logger
 logger = logger.logger
 
@@ -64,4 +67,4 @@ utc_now = utc_now.utc_now
 from . import write as write
 write = write.write
 
-
+from . import mpl as mpl
