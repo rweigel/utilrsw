@@ -1,3 +1,5 @@
+# TODO: Automate.
+
 from . import array_to_dict as array_to_dict
 array_to_dict = array_to_dict.array_to_dict
 
@@ -44,6 +46,9 @@ rm_path = rm_path.rm_path
 
 from . import rm_if_empty as rm_if_empty
 rm_if_empty = rm_if_empty.rm_if_empty
+
+from . import script_info as script_info
+script_info = script_info.script_info
 
 from . import servefs as servefs
 servefs = servefs.servefs
