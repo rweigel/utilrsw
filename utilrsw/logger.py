@@ -11,7 +11,7 @@ def logger(name=None,
            file_format=u"%(asctime)s %(levelname)s %(name)s %(message)s",
            log_dir=None,
            file_log=None,
-           file_error=None,
+           file_error=None, # If None, derived from file_log. If False, no error log file.
            datefmt="%Y-%m-%dT%H:%M:%S.%f",
            utc_timestamps=True,
            rm_existing=True,
@@ -106,23 +106,19 @@ def logger(name=None,
       """Only show log messages with log level below ERROR."""
       return record.levelno < logging.ERROR
 
-  def get_filename(filename, ext):
+  def get_filename(log_dir, filename, ext):
+
+    if os.path.isabs(filename):
+      return filename
+
+    frame = inspect.stack()[-1]
+    if log_dir is None:
+      log_dir = os.path.dirname(frame.filename)
+
     if filename is None:
-      frame = inspect.stack()[2]
-      module = inspect.getmodule(frame[0])
-      file_log = os.path.splitext(module.__file__)[0] + ext
-      if log_dir is not None:
-        file_log_dir = os.path.dirname(file_log)
-        file_log_name = os.path.basename(file_log)
-        file_log = os.path.join(file_log_dir, log_dir, file_log_name)
-    else:
-      if os.path.isabs(filename):
-        file_log = filename
-      else:
-        frame = inspect.stack()[2]
-        module = inspect.getmodule(frame[0])
-        file_log = os.path.join(os.path.dirname(module.__file__), filename)
-    return file_log
+      filename = os.path.splitext(os.path.basename(frame.filename))[0] + ext
+
+    return os.path.join(log_dir, filename)
 
   if utc_timestamps:
     logging.Formatter.converter = time.gmtime
@@ -141,11 +137,12 @@ def logger(name=None,
     else:
       name = '__main__'
 
-  file_log = get_filename(file_log, ".log")
-  if not file_error:
-    file_error = os.path.splitext(file_log)[0] + ".errors.log"
-  else:
-    file_error = get_filename(file_error, ".errors.log")
+  file_log = get_filename(log_dir, file_log, ".log")
+  if file_error is not False:
+    if file_error is None:
+      file_error = os.path.splitext(file_log)[0] + ".errors.log"
+    else:
+      file_error = get_filename(log_dir, file_error, ".errors.log")
 
   if rm_existing:
     if os.path.exists(file_log):
@@ -165,7 +162,7 @@ def logger(name=None,
             'file_stdout'
           ]
 
-  if file_error:
+  if file_error is not False:
     handlers.append('file_stderr')
 
   # Based on https://stackoverflow.com/a/66728490

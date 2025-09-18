@@ -1,0 +1,3 @@
+2025-09-16T18:00:20Z INFO  logger2 "logger2 info message"
+2025-09-16T18:00:20Z ERROR logger2 "logger2 error message"
+2025-09-16T18:00:20Z DEBUG logger2 "logger2 debug message"
