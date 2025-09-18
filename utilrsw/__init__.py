@@ -73,3 +73,5 @@ from . import write as write
 write = write.write
 
 from . import mpl as mpl
+
+from . import time as time
