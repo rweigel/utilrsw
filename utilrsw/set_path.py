@@ -1,4 +1,13 @@
-def set_path(d, value, path, sep='.'):
+from typeguard import typechecked
+from typing import Any, Union, List, Dict
+
+@typechecked
+def set_path(
+              d: Union[Dict[Any, Any], List[Any]],
+              value: Any,
+              path: Union[str, List[Union[str, int]]],
+              sep: str = '.'
+            ) -> Union[Dict[Any, Any], List[Any]]:
   """ Set a value in a nested dict/list structure given a path."""
 
   if isinstance(path, str):
@@ -16,7 +25,8 @@ def set_path(d, value, path, sep='.'):
       if isinstance(key, int):
         # Ensure obj is a list
         if not isinstance(obj, list):
-          raise ValueError(f"Expected list at path {'/'.join(path[:i])}, got {type(obj)}")
+          emsg = f"Expected list at path {'/'.join(path[:i])}, got {type(obj)}"
+          raise ValueError(emsg)
         # Expand list if needed
         while len(obj) <= key:
           obj.append(None)
@@ -24,14 +34,16 @@ def set_path(d, value, path, sep='.'):
       else:
         # Ensure obj is a dict
         if not isinstance(obj, dict):
-          raise ValueError(f"Expected dict at path {'/'.join(path[:i])}, got {type(obj)}")
+          emsg = f"Expected dict at path {'/'.join(path[:i])}, got {type(obj)}"
+          raise ValueError(emsg)
         obj[key] = value
     else:
       # Intermediate element in path, ensure the structure exists
       if isinstance(key, int):
         # Ensure obj is a list
         if not isinstance(obj, list):
-          raise ValueError(f"Expected list at path {'/'.join(path[:i])}, got {type(obj)}")
+          emsg = f"Expected list at path {'/'.join(path[:i])}, got {type(obj)}"
+          raise ValueError()
         # Expand list if needed
         while len(obj) <= key:
           obj.append(None)
@@ -42,7 +54,8 @@ def set_path(d, value, path, sep='.'):
       else:
         # Ensure obj is a dict
         if not isinstance(obj, dict):
-          raise ValueError(f"Expected dict at path {'/'.join(path[:i])}, got {type(obj)}")
+          emsg = f"Expected dict at path {'/'.join(path[:i])}, got {type(obj)}"
+          raise ValueError(emsg)
         if key not in obj or obj[key] is None:
           # Create a new dict for the next level
           obj[key] = {}

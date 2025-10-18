@@ -47,6 +47,9 @@ rm_path = rm_path.rm_path
 from . import rm_if_empty as rm_if_empty
 rm_if_empty = rm_if_empty.rm_if_empty
 
+from . import set_path as set_path
+set_path = set_path.set_path
+
 from . import script_info as script_info
 script_info = script_info.script_info
 
