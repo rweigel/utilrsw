@@ -1,17 +1,20 @@
-def get_path(obj, path):
+def get_path(obj, path, sep='.'):
 
   if obj is None:
     return None
 
   if isinstance(path, str):
-    if '.' in path:
-      path = path.split('.')
+    if sep in path:
+      path = path.split(sep)
     else:
       path = [path]
 
   for key in path:
     if obj is None:
       return None
+
+    if key == '':
+      return obj
 
     if not isinstance(obj, dict):
       if not isinstance(obj, list):
@@ -46,7 +49,10 @@ def get_path_test():
     }
   }
 
+  assert get_path(obj, [""]) == obj
+
   assert get_path(obj, "a.b.c") == [1, 2, 3]
+  assert get_path(obj, "a/b/c", sep='/') == [1, 2, 3]
   assert get_path(obj, "a.x") is None
   assert get_path(obj, "a.x.y") is None
 
