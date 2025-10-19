@@ -8,7 +8,9 @@ import logging.config
 
 def logger(name=None,
            console_format=u"%(asctime)s %(levelname)s %(name)s %(message)s",
+           console_level='INFO',
            file_format=u"%(asctime)s %(levelname)s %(name)s %(message)s",
+           file_level='INFO',
            log_dir=None,
            file_log=None,
            file_error=None, # If None, derived from file_log. If False, no error log file.
@@ -208,7 +210,7 @@ def logger(name=None,
           'console_stdout': {
               # Sends log messages with log level lower than ERROR to stdout
               'class': 'logging.StreamHandler',
-              'level': 'DEBUG',
+              'level': console_level,
               'formatter': 'console_formatter',
               'filters': ['exclude_errors'],
               'stream': sys.stdout
@@ -216,7 +218,7 @@ def logger(name=None,
           'file_stdout': {
               # Sends all log messages to a file
               'class': 'logging.FileHandler',
-              'level': 'DEBUG',
+              'level': file_level,
               'formatter': 'file_formatter',
               'filename': file_log,
               'encoding': 'utf8'
