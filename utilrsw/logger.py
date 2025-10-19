@@ -138,7 +138,7 @@ def logger(name=None,
       name = '__main__'
 
   if file_log is None:
-    file_log = name
+    file_log = name + ".log"
 
   file_log = get_filename(log_dir, file_log, ".log")
   if file_error is not False:
