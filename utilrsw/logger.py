@@ -111,7 +111,7 @@ def logger(name=None,
   def get_filename(log_dir, filename, ext):
 
     if os.path.isabs(filename):
-      return filename
+      return filename + ext
 
     frame = inspect.stack()[-1]
     if log_dir is None:
@@ -135,7 +135,7 @@ def logger(name=None,
     frame = inspect.stack()[1]
     module = inspect.getmodule(frame[0])
     if module and hasattr(module, '__file__'):
-      name = os.path.basename(module.__file__)
+      name = os.path.splitext(os.path.basename(module.__file__))[0]
     else:
       name = '__main__'
 
