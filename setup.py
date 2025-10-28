@@ -17,7 +17,7 @@ install_requires = [
 
 setup(
     name='utilrsw',
-    version='0.0.1',
+    version='0.0.2',
     author='Bob Weigel',
     author_email='rweigel@gmu.edu',
     packages=find_packages(),
