@@ -1,5 +1,5 @@
 def timedelta_to_isoduration(td):
-  """Converts a timedelta object to an ISO 8601 duration string (H, M, S only)."""
+  """Converts a timedelta object to an ISO 8601 duration string"""
 
   # See also https://stackoverflow.com/a/77958275/1491619
   # Alternative is to use timedelta_isoformat package, but it returns shortest

@@ -44,6 +44,7 @@ def format_dict(d: dict, sort_dicts=False, indent=0, style=None) -> str:
     msg += _print_to_string(f"{' '*indent}{key}: ", end=end)
     if isinstance(value, dict):
       msg += format_dict(value, sort_dicts=sort_dicts, indent=indent+1)
+      msg += '\n'
     else:
       if isinstance(value, str):
         msg += _print_to_string(f"'{value}'")

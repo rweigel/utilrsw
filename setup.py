@@ -12,7 +12,8 @@ install_requires = [
     "deepdiff>=6.3.1",
     "xmltodict",
     "pyyaml",
-    "lxml"
+    "lxml",
+    "typeguard"
 ]
 
 setup(

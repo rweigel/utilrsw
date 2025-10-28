@@ -8,7 +8,9 @@ import logging.config
 
 def logger(name=None,
            console_format=u"%(asctime)s %(levelname)s %(name)s %(message)s",
+           console_level='INFO',
            file_format=u"%(asctime)s %(levelname)s %(name)s %(message)s",
+           file_level='INFO',
            log_dir=None,
            file_log=None,
            file_error=None, # If None, derived from file_log. If False, no error log file.
@@ -109,7 +111,7 @@ def logger(name=None,
   def get_filename(log_dir, filename, ext):
 
     if os.path.isabs(filename):
-      return filename
+      return filename + ext
 
     frame = inspect.stack()[-1]
     if log_dir is None:
@@ -133,9 +135,12 @@ def logger(name=None,
     frame = inspect.stack()[1]
     module = inspect.getmodule(frame[0])
     if module and hasattr(module, '__file__'):
-      name = os.path.basename(module.__file__)
+      name = os.path.splitext(os.path.basename(module.__file__))[0]
     else:
       name = '__main__'
+
+  if file_log is None:
+    file_log = name + ".log"
 
   file_log = get_filename(log_dir, file_log, ".log")
   if file_error is not False:
@@ -205,7 +210,7 @@ def logger(name=None,
           'console_stdout': {
               # Sends log messages with log level lower than ERROR to stdout
               'class': 'logging.StreamHandler',
-              'level': 'DEBUG',
+              'level': console_level,
               'formatter': 'console_formatter',
               'filters': ['exclude_errors'],
               'stream': sys.stdout
@@ -213,7 +218,7 @@ def logger(name=None,
           'file_stdout': {
               # Sends all log messages to a file
               'class': 'logging.FileHandler',
-              'level': 'DEBUG',
+              'level': file_level,
               'formatter': 'file_formatter',
               'filename': file_log,
               'encoding': 'utf8'
