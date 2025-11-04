@@ -42,6 +42,7 @@ from . import read as read
 read = read.read
 
 from . import rm_path as rm_path
+rm_paths = rm_path.rm_paths
 rm_path = rm_path.rm_path
 
 from . import rm_if_empty as rm_if_empty
