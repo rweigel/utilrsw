@@ -1,0 +1,3 @@
+2025-11-09T10:52:38Z INFO  logger_demo "logger3 info message"
+2025-11-09T10:52:38Z ERROR logger_demo "logger3 error message"
+2025-11-09T10:52:38Z DEBUG logger_demo "logger3 debug message"

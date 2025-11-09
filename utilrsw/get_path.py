@@ -1,7 +1,7 @@
-def get_path(obj, path, sep='.'):
+def get_path(obj, path, default=None, sep='.'):
 
   if obj is None:
-    return None
+    return default
 
   if isinstance(path, str):
     if sep in path:
@@ -11,7 +11,7 @@ def get_path(obj, path, sep='.'):
 
   for key in path:
     if obj is None:
-      return None
+      return default
 
     if key == '':
       return obj
@@ -19,19 +19,19 @@ def get_path(obj, path, sep='.'):
     if not isinstance(obj, dict):
       if not isinstance(obj, list):
         if not isinstance(obj, tuple):
-          return None
+          return default
 
     if isinstance(key, int):
       if not isinstance(obj, list):
-        return None
+        return default
       if key < 0:
         key = len(obj) + key
       if key < 0 or key > len(obj) - 1:
-        return None
+        return default
 
     if isinstance(obj, dict):
       if key not in obj:
-        return None
+        return default
 
     obj = obj[key]
 
