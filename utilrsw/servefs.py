@@ -37,6 +37,7 @@ def servefs(app=None, root="."):
 
   # Convert root to an absolute path
   root = os.path.abspath(root)
+  logger.info(f"Serving files from root directory: {root}")
 
   app.add_middleware(
       CORSMiddleware,
