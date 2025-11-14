@@ -16,6 +16,9 @@ get_json = get_json.get_json
 from . import get_path as get_path
 get_path = get_path.get_path
 
+from . import get_func as get_func
+get_func = get_func.get_func
+
 from . import file_parts as file_parts
 file_parts = file_parts.file_parts
 

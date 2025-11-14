@@ -140,6 +140,11 @@ def logger(name=None,
       base, ext = os.path.splitext(file_log)
       file_error = base + f".errors.{ext.lstrip('.')}"
 
+  if not os.path.isabs(file_log) and log_dir is not None:
+    file_log = os.path.join(log_dir, file_log)
+  if not os.path.isabs(file_error) and log_dir is not None:
+    file_error = os.path.join(log_dir, file_error)
+
   if rm_existing:
     if os.path.exists(file_log):
       os.remove(file_log)
