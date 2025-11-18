@@ -4,6 +4,7 @@ def get_func(module_string):
   """
   import importlib
   parts = module_string.split('.')
+
   module_name = ".".join(parts[:-1])
   function_name = parts[-1]
 
