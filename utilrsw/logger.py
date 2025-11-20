@@ -7,11 +7,12 @@ import logging
 import logging.config
 
 def logger(name=None,
+           log_level='INFO',
            console_format=u"%(asctime)s %(levelname)s %(name)s %(message)s",
-           console_level='INFO',
-           file_format=u"%(asctime)s %(levelname)s %(name)s %(message)s",
-           file_level='INFO',
+           console_level=None,
            log_dir=None,
+           file_format=u"%(asctime)s %(levelname)s %(name)s %(message)s",
+           file_level=None,
            file_log=None,
            file_error=None, # If None, derived from file_log. If False, no error log file.
            datefmt="%Y-%m-%dT%H:%M:%S.%f",
@@ -73,7 +74,10 @@ def logger(name=None,
       record.levelname = levelname_original
 
       ret = ret.replace(rm_string, "")
-
+      if debug_logger and self.name == 'file_stdout':
+        print(f"   Writing to file_stdout: '{ret}'")
+      if debug_logger and self.name == 'file_stderr':
+        print(f"   Writing to file_stderr: '{ret}'")
       return ret
 
     def pad_levelname(self, levelname):
@@ -108,19 +112,10 @@ def logger(name=None,
       """Only show log messages with log level below ERROR."""
       return record.levelno < logging.ERROR
 
-  def get_filename(log_dir, filename, ext):
-
-    if os.path.isabs(filename):
-      return filename + ext
-
-    frame = inspect.stack()[-1]
-    if log_dir is None:
-      log_dir = os.path.dirname(frame.filename)
-
-    if filename is None:
-      filename = os.path.splitext(os.path.basename(frame.filename))[0] + ext
-
-    return os.path.join(log_dir, filename)
+  if console_level is None:
+    console_level = log_level
+  if file_level is None:
+    file_level = log_level
 
   if utc_timestamps:
     logging.Formatter.converter = time.gmtime
@@ -130,8 +125,6 @@ def logger(name=None,
       print("No logger name provided, using inspect.stack() to determine name.")
       for idx, frame in enumerate(inspect.stack()):
         print(f"  Frame {idx}: {frame.frame}")
-        #module = inspect.getmodule(frame[0])
-        #print(f"    Module: {module}")
     frame = inspect.stack()[1]
     module = inspect.getmodule(frame[0])
     if module and hasattr(module, '__file__'):
@@ -142,12 +135,15 @@ def logger(name=None,
   if file_log is None:
     file_log = name + ".log"
 
-  file_log = get_filename(log_dir, file_log, ".log")
   if file_error is not False:
     if file_error is None:
-      file_error = os.path.splitext(file_log)[0] + ".errors.log"
-    else:
-      file_error = get_filename(log_dir, file_error, ".errors.log")
+      base, ext = os.path.splitext(file_log)
+      file_error = base + f".errors.{ext.lstrip('.')}"
+
+  if not os.path.isabs(file_log) and log_dir is not None:
+    file_log = os.path.join(log_dir, file_log)
+  if not os.path.isabs(file_error) and log_dir is not None:
+    file_error = os.path.join(log_dir, file_error)
 
   if rm_existing:
     if os.path.exists(file_log):

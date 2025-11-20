@@ -14,15 +14,37 @@ def script_info():
   import datetime
 
   frame = inspect.stack()[1]
-  calling_function = frame.function
+
   module = inspect.getmodule(frame[0])
-  last_modified = os.path.getmtime(module.__file__)
-  last_modified = datetime.datetime.utcfromtimestamp(last_modified).replace(tzinfo=datetime.timezone.utc).isoformat().replace('+00:00', 'Z')
+
   parent_module = module.__package__ if module and module.__package__ else None
+  if parent_module is None and module:
+    parent_module = module.__name__
+
+  calling_function = frame.function
+  if calling_function == "<module>":
+    calling_function = None
+
+  name = None
+  path = None
+  dir = None
+  last_modified = None
+  if hasattr(module, '__file__'):
+    name = os.path.basename(module.__file__)
+    path = os.path.abspath(module.__file__)
+    dir = os.path.dirname(path)
+
+    last_modified = os.path.getmtime(module.__file__)
+    last_modified = datetime.datetime.utcfromtimestamp(last_modified)
+    last_modified = last_modified.replace(tzinfo=datetime.timezone.utc)
+    last_modified = last_modified.isoformat().replace('+00:00', 'Z')
+  else:
+    dir = os.getcwd()
+
   info = {
-    "name": os.path.basename(module.__file__),
-    "path": os.path.abspath(module.__file__),
-    "dir": os.path.dirname(os.path.abspath(module.__file__)),
+    "name": name,
+    "path": path,
+    "dir": dir,
     "line": frame[2],
     "function": calling_function,
     "module": parent_module,

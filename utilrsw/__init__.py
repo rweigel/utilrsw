@@ -16,6 +16,9 @@ get_json = get_json.get_json
 from . import get_path as get_path
 get_path = get_path.get_path
 
+from . import get_func as get_func
+get_func = get_func.get_func
+
 from . import file_parts as file_parts
 file_parts = file_parts.file_parts
 
@@ -42,6 +45,7 @@ from . import read as read
 read = read.read
 
 from . import rm_path as rm_path
+rm_paths = rm_path.rm_paths
 rm_path = rm_path.rm_path
 
 from . import rm_if_empty as rm_if_empty

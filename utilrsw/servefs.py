@@ -1,22 +1,57 @@
-def servefs(app=None, root="."):
+def servefs(config=None):
   """Serve a directory listing or a file using FastAPI.
-  Example usage::
-    import uvicorn
-    import utilrsw
-    app = utilrsw.servefs(root=".")
-    uvicorn.run(app, host="0.0.0.0", port=6001)
 
-  Args:
-    app: FastAPI app instance (optional)
-    root: Root directory to serve (default: current directory)
+  Parameters
+  ----------
+  config : dict (see example for options) or str, optional
+      Configuration dictionary or path to a JSON file. If a string, it is
+      treated as the path to a JSON file containing such a dict.
+
+  Returns
+  -------
+  app : FastAPI application
+      A FastAPI application that serves files from the specified root
+
+  Example
+  -------
+  Using Uvicorn directly (if using only a single worker):
+
+  .. code-block:: python
+
+      app_config = {
+          "debug": True,
+          "root": ".",
+          "stream_threshold": 5 * 1024 * 1024
+      }
+
+      import utilrsw
+      import uvicorn
+      app = utilrsw.servefs(app_config)
+      uvicorn.run(app, host="0.0.0", port=6002)
+
+  Using a wrapper that calls Uvicorn from the command line (needed for
+  multiple workers):
+
+  .. code-block:: python
+
+      import utilrsw.uvicorn
+      configs = {
+          "server": {
+              "--host": "0.0.0.0",
+              "--port": 6002,
+              "--workers": 2
+          },
+          "app": app_config
+      }
+      utilrsw.uvicorn.run("utilrsw.servefs", configs)
+
   """
   import os
   import html
+  import json
   import pathlib
   import datetime
   import urllib.parse
-
-  import uvicorn
 
   from fastapi import FastAPI, HTTPException
   from fastapi.responses import HTMLResponse, FileResponse, StreamingResponse
@@ -27,24 +62,29 @@ def servefs(app=None, root="."):
   logger = logging.getLogger("servefs")
   logger.setLevel(logging.DEBUG)
 
-  if app is None:
-    app = FastAPI()
+  if config is None:
+    config = {}
+  if isinstance(config, str):
+    with open(config, "r") as f:
+      config = f.read()
+      config = json.loads(config)
 
-  STREAM_THRESHOLD = 10 * 1024 * 1024  # 10 MB threshold for streaming
-
-  # Removes: server: uvicorn from HTTP response headers
-  uvicorn.SERVER_SOFTWARE = None
+  root = config.get("root", ".")
+  STREAM_THRESHOLD = config.get("stream_threshold", 10 * 1024 * 1024)
 
   # Convert root to an absolute path
   root = os.path.abspath(root)
+  logger.info(f"Serving files from root directory: {root}")
 
-  app.add_middleware(
-      CORSMiddleware,
-      allow_origins=["*"],
-      allow_credentials=True,
-      allow_methods=["GET", "HEAD"],
-      allow_headers=["Content-Type"]
-  )
+  app = FastAPI()
+
+  kwargs = {
+    "allow_origins": ["*"],
+    "allow_credentials": True,
+    "allow_methods": ["GET", "HEAD"],
+    "allow_headers": ["Content-Type"]
+  }
+  app.add_middleware(CORSMiddleware, **kwargs)
 
   @app.get("{path:path}", response_class=HTMLResponse)
   async def serve_directory_or_file(path: str = ""):
@@ -106,29 +146,7 @@ def servefs(app=None, root="."):
       # For directories, return a generic response with no body
       return HTMLResponse(content="", headers={"Content-Type": "text/html"})
 
-  _DIR_LISTING = """
-  <!DOCTYPE html>
-  <html lang="en">
-  <head>
-    <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
-    <title>__DIRECTORY__</title>
-  </head>
-  <body>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Size</th>
-          <th>Last Modified</th>
-        </tr>
-      </thead>
-      <tbody>
-  __DIRECTORY_HTML__
-      </tbody>
-    </table>
-  </body>
-  </html>
-  """.replace("\n  ", "\n")[1:]
+  DIR_LISTING = _DIR_LISTING.replace("\n  ", "\n")[1:]
 
   def _dir_listing(full_path, server_path, items):
 
@@ -155,11 +173,32 @@ def servefs(app=None, root="."):
         rows.append(f'      <tr><td>{a}</td><td>{size}</td><td>{modified}</td></tr>')
 
     # Replace placeholders in the template
-    listing_html = _DIR_LISTING.replace("__DIRECTORY__", server_path)
+    listing_html = DIR_LISTING.replace("__DIRECTORY__", server_path)
     listing_html = listing_html.replace("__DIRECTORY_HTML__", "\n".join(rows))
     return listing_html
 
   return app
 
-if __name__ == '__main__':
-  servefs(run=True)
+_DIR_LISTING = """
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+    <title>__DIRECTORY__</title>
+  </head>
+  <body>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Size</th>
+          <th>Last Modified</th>
+        </tr>
+      </thead>
+      <tbody>
+  __DIRECTORY_HTML__
+      </tbody>
+    </table>
+  </body>
+  </html>
+  """
