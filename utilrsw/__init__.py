@@ -83,6 +83,10 @@ from . import xprint as xprint
 xprint = xprint.xprint
 
 
+from . import test as test
+
+from . import np as np
+
 from . import mpl as mpl
 
 from . import time as time
