@@ -1,12 +1,11 @@
-def tpad(time, length=7):
+def ints_pad(time, length=7):
   """Pad list or array with 3 or more elements with zeros.
 
   Example:
   --------
-  >>> from hxform import hxform as hx
-  >>> print(hx.tpad([2000,1,1]))                 # [2000, 1, 1, 0, 0, 0, 0]
-  >>> print(hx.tpad([2000,1,1], length=4))       # [2000, 1, 1, 0]
-  >>> print(hx.tpad([2000,1,1,2,3,4], length=3)) # [2000, 1, 1]
+  >>> print(ints_pad([2000,1,1]))                 # [2000, 1, 1, 0, 0, 0, 0]
+  >>> print(ints_pad([2000,1,1], length=4))       # [2000, 1, 1, 0]
+  >>> print(ints_pad([2000,1,1,2,3,4], length=3)) # [2000, 1, 1]
   """
   import numpy as np
   in_type = type(time)

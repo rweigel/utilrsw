@@ -6,7 +6,10 @@ def ints2doy(t):
   >>> ints2doy([2000, 2, 1, 9, 9, 9]) # [2000, 32, 9, 9, 9]
   """
   from datetime import datetime
+
   import numpy as np
+
+  from .doy import doy
 
   in_type = type(t)
 
@@ -23,7 +26,7 @@ def ints2doy(t):
     day_of_year = datetime(*t).timetuple().tm_yday
   else:
     day_of_year = doy(t[:,:3])
-    t = np.column_stack((t[:,0], day_of_year, t[:,3], t[:,4], t[:,5]))
+    t = np.column_stack((t[:, 0], day_of_year, t[:, 3], t[:, 4], t[:, 5]))
 
   if in_type == np.ndarray:
     return t
