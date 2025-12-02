@@ -15,3 +15,6 @@ ints2datetime = ints2datetime.ints2datetime
 
 from . import ints_pad as ints_pad
 ints_pad = ints_pad.ints_pad
+
+from . import iso2ints as iso2ints
+iso2ints = iso2ints.iso2ints
