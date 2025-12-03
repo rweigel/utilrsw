@@ -34,6 +34,9 @@ logger = logger.logger
 from . import mkdir as mkdir
 mkdir = mkdir.mkdir
 
+from . import map_dict as map_dict
+map_dict = map_dict.map_dict
+
 from . import pad_iso8601 as pad_iso8601
 pad_iso8601 = pad_iso8601.pad_iso8601
 
