@@ -64,7 +64,7 @@ def run(app_function, configs):
   import utilrsw
 
   config_server = configs.get('server', None)
-  config_app = configs.get('app', None)
+  config_app = configs.get('app', {})
 
   app_debug = config_app.get("debug", False)
   if app_debug:

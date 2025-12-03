@@ -82,6 +82,14 @@ utc_now = utc_now.utc_now
 from . import write as write
 write = write.write
 
+from . import xprint as xprint
+xprint = xprint.xprint
+
+
+from . import test as test
+
+from . import np as np
+
 from . import mpl as mpl
 
 from . import time as time
