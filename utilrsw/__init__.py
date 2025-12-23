@@ -25,9 +25,6 @@ file_parts = file_parts.file_parts
 from . import flatten_dicts as flatten_dicts
 flatten_dicts = flatten_dicts.flatten_dicts
 
-from . import format_exponent as format_exponent
-from .format_exponent import format_exponent
-
 from . import logger as logger
 logger = logger.logger
 
@@ -63,18 +60,12 @@ servefs = servefs.servefs
 from . import sort_dict as sort_dict
 sort_dict = sort_dict.sort_dict
 
-from . import svglinks as svglinks
-svglinks = svglinks.svglinks
-
 from . import timer as timer
 tick = timer.tick
 tock = timer.tock
 
 from . import trim as trim
 trim = trim.trim
-
-from . import utc_now as utc_now
-utc_now = utc_now.utc_now
 
 from . import write as write
 write = write.write

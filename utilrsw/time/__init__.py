@@ -18,3 +18,6 @@ iso2ints = iso2ints.iso2ints
 
 from . import pad_iso8601 as pad_iso8601
 pad_iso8601 = pad_iso8601.pad_iso8601
+
+from . import utc_now as utc_now
+utc_now = utc_now.utc_now

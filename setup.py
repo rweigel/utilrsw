@@ -11,9 +11,7 @@ install_requires = [
     "requests_cache>=1.2.1",
     "deepdiff>=6.3.1",
     "xmltodict",
-    "pyyaml",
-    "lxml",
-    "typeguard",
+    "typeguard"
 ]
 
 # Make the default install include the full set of dependencies. Provide a
@@ -24,13 +22,17 @@ install_requires = [
 #   pip install utilrsw[full]
 # Installs no extra deps
 #   pip install utilrsw[minimal]
-# Install only deps for xprint
+
 #   pip install utilrsw[xprint]
+#   pip install utilrsw[svg]
+#   pip install utilrsw[mpl]
 
 extras_require = {
     "full": install_requires,
     "minimal": [],
-    "xprint": []
+    "xprint": [],
+    "svg": ["lxml"],
+    "mpl": ["matplotlib"]
 }
 
 setup(
