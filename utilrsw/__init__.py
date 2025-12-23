@@ -34,6 +34,9 @@ logger = logger.logger
 from . import mkdir as mkdir
 mkdir = mkdir.mkdir
 
+from . import map_dict as map_dict
+map_dict = map_dict.map_dict
+
 from . import print_dict as print_dict
 format_dict = print_dict.format_dict
 print_dict = print_dict.print_dict
