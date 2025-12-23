@@ -13,8 +13,8 @@ ints_list = ints_list.ints_list
 from . import ints2datetime as ints2datetime
 ints2datetime = ints2datetime.ints2datetime
 
-from . import ints_pad as ints_pad
-ints_pad = ints_pad.ints_pad
-
 from . import iso2ints as iso2ints
 iso2ints = iso2ints.iso2ints
+
+from . import pad_iso8601 as pad_iso8601
+pad_iso8601 = pad_iso8601.pad_iso8601
