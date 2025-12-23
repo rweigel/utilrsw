@@ -114,6 +114,3 @@ assert(np.all(comps == comps0n[0].reshape((1, 3))))
 mat = components2matrix(np.array(comps0n))
 comps = matrix2components(np.array(comps0n), mat)
 assert(np.all(comps == np.array(comps0n)))
-
-
-
