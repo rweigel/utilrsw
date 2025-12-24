@@ -6,13 +6,6 @@ array_to_dict = array_to_dict.array_to_dict
 from . import compare_dicts as compare_dicts
 compare_dicts = compare_dicts.compare_dicts
 
-from . import get_file as get_file
-get_conditional = get_file.get_conditional
-get_file = get_file.get_file
-
-from . import get_json as get_json
-get_json = get_json.get_json
-
 from . import get_path as get_path
 get_path = get_path.get_path
 
@@ -73,11 +66,9 @@ write = write.write
 from . import xprint as xprint
 xprint = xprint.xprint
 
-
-from . import test as test
-
-from . import np as np
-
+from . import svg as svg
 from . import mpl as mpl
-
+from . import net as net
+from . import np as np
+from . import test as test
 from . import time as time
