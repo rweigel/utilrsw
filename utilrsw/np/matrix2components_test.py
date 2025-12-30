@@ -6,6 +6,13 @@ import numpy as np
 from utilrsw.np.components2matrix import components2matrix
 from utilrsw.test.assert_raises import assert_raises
 
+match = "Input must be list, tuple, or numpy.ndarray"
+# components2matrix(None)
+assert_raises(ValueError, components2matrix, [None], match=match)
+# components2matrix({})
+assert_raises(ValueError, components2matrix, [{}], match=match)
+
+
 comps1 = np.array([[1.0, 0.0, 0.0]])
 comps2 = np.array([[1.0, 0.0, 0.0], [2.0, 0.0, 0.0]])
 
@@ -151,6 +158,7 @@ mat = components2matrix(comps1c)
 assert(mat.shape == (1, 3))
 assert(np.all(mat == comps1))
 
+#x
 match = 'Input 1-D numpy.ndarray must have three elements'
 # components2matrix(np.array([1.0, 0.0]))
 assert_raises(ValueError, components2matrix, [np.array([1.0, 0.0])], match=match)
@@ -163,6 +171,12 @@ assert_raises(ValueError, components2matrix, [np.array([[[1.0, 0.0, 0.0]]])], ma
 mat = components2matrix(comps2)
 assert(mat.shape == (2, 3))
 assert(np.all(mat == comps2))
+
+match = 'Input must be list, tuple, or numpy.ndarray'
+assert_raises(ValueError, components2matrix, [None], match=match)
+
+match = 'Input must be list, tuple, or numpy.ndarray'
+assert_raises(ValueError, components2matrix, [{}], match=match)
 
 match = 'Input numpy.ndarray must have three columns'
 arg = [np.array([[1.0, 0.0, 0.0, 0.0]])]

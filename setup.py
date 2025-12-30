@@ -7,29 +7,32 @@ from setuptools import setup, find_packages
 # (charset=utf-8 is redundant and causes requests_cache not not cache
 # _decoded_content)
 # See also utilrsw/get_json.py/_requests_cache_bug()
-install_requires = [
-    "requests_cache>=1.2.1",
-    "deepdiff>=6.3.1",
-    "xmltodict",
-    "pyyaml",
-    "lxml",
-    "typeguard",
-]
+install_requires = ["typeguard"]
 
 # Make the default install include the full set of dependencies. Provide a
 # "minimal" extra to allow installing with no dependencies when desired.
 
-# Installs all normal deps
+# Installs all deps
 #   pip install utilrsw
 #   pip install utilrsw[full]
-# Installs no extra deps
+# Installs no deps
 #   pip install utilrsw[minimal]
-# Install only deps for xprint
-#   pip install utilrsw[xprint]
+
+# pip install utilrsw[mpl]
+# pip install utilrsw[net]
+# pip install utilrsw[svg]
+# pip install utilrsw[time]
+# pip install utilrsw[test]
+# pip install utilrsw[xprint]
 
 extras_require = {
     "full": install_requires,
     "minimal": [],
+    "mpl": ["matplotlib"],
+    "net": ["requests", "xmltodict", "requests_cache>=1.2.1", "deepdiff>=6.3.1"],
+    "svg": ["lxml"],
+    "test": [],
+    "time": [],
     "xprint": []
 }
 

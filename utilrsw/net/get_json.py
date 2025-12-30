@@ -2,15 +2,8 @@ import os
 import json
 import time
 import shutil
-import logging
 import datetime
 import tempfile
-import xmltodict
-
-import deepdiff
-
-import requests_cache
-from requests.adapters import HTTPAdapter
 
 #logging.basicConfig(level='DEBUG')
 #import http; http.client.HTTPConnection.debuglevel=5
@@ -20,6 +13,9 @@ from requests.adapters import HTTPAdapter
 #  To serialize the response object to a separate file.
 
 def get_json(url, cache_dir=None, headers=None, timeout=20, max_retries=5, diffs=False, csopts=None):
+
+  import xmltodict
+  from requests.adapters import HTTPAdapter
 
   if cache_dir is None:
     cache_dir = tempfile.gettempdir()
@@ -93,7 +89,9 @@ def get_json(url, cache_dir=None, headers=None, timeout=20, max_retries=5, diffs
     raise e
     return {'response': resp, 'data': None, 'diff': None, 'emsg': e, 'log': None}
 
+
 def _stat_dict(fname):
+
   if fname is None:
     return None
   # https://stackoverflow.com/questions/55638905/how-to-convert-os-stat-result-to-a-json-that-is-an-object
@@ -110,7 +108,9 @@ def _stat_dict(fname):
       stat_dict[time_attr] = f"{formatted_time}.{mircos:06d} GMT"
   return stat_dict
 
+
 def _diff(cache_dir, cache_key):
+  import deepdiff
 
   def read(fname):
     with open(fname, encoding='utf-8') as f:
@@ -147,6 +147,7 @@ def _diff(cache_dir, cache_key):
   shutil.copyfile(file_now, file_last)
 
   return {"diff": diff, "file_now": file_now, "file_last": file_last}
+
 
 def _log(info):
   resp = info['response']
@@ -191,7 +192,10 @@ def _log(info):
       msg += f"{json_indented}\n"
   return msg.rstrip()
 
+
 def _CachedSession(cache_dir, csopts):
+
+  import requests_cache
 
   # https://requests-cache.readthedocs.io/en/stable/#settings
   # https://requests-cache.readthedocs.io/en/stable/user_guide/headers.html
@@ -239,6 +243,7 @@ def _CachedSession(cache_dir, csopts):
   #session.cache.clear()
   return session
 
+
 def _requests_cache_bug():
   from datetime import timedelta
   import requests_cache
@@ -282,7 +287,10 @@ def _requests_cache_bug():
   print("response headers")
   print(resp.headers)
 
+
 def _demo():
+  import requests_cache
+
   url = "https://httpbin.org/cache/4"
   #url = "https://httpbin.org/bytes/4"
   url = "https://spdf.gsfc.nasa.gov/pub/catalogs/all.xml"
@@ -310,6 +318,7 @@ def _demo():
   print(resp.request.headers)
   print("response headers")
   print(resp.headers)
+
 
 if __name__ == '__main__':
   _demo()
