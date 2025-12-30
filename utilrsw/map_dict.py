@@ -1,7 +1,9 @@
 def map_dict(d, mapping):
+  from .get_path import get_path
+  from .set_path import set_path
   result = {}
   for path in mapping:
-    value = utilrsw.get_path(d, path, sep='/')
+    value = get_path(d, path, sep='/')
     if value is not None:
-      utilrsw.set_path(result, value, mapping[path], sep='/')
+      set_path(result, value, mapping[path], sep='/')
   return result
