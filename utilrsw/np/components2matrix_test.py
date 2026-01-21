@@ -1,116 +1,188 @@
 import numpy as np
 
-# Installed using pip install -e . so absolute import works
 # Execute test using python -m utilrsw.np.components2matrix_test from
 # the utilrsw package root directory.
-from utilrsw.np.matrix2components import matrix2components
 from utilrsw.np.components2matrix import components2matrix
+from utilrsw.test.assert_raises import assert_raises
+
+match = "Input must be list, tuple, or numpy.ndarray"
+# components2matrix(None)
+assert_raises(ValueError, components2matrix, [None], match=match)
+# components2matrix({})
+assert_raises(ValueError, components2matrix, [{}], match=match)
+
+
+comps1 = np.array([[1.0, 0.0, 0.0]])
+comps2 = np.array([[1.0, 0.0, 0.0], [2.0, 0.0, 0.0]])
 
 # Three inputs
-comps0l = [1.0, 0.0, 0.0]
-comps0t = (1.0, 0.0, 0.0)
 
-# components2matrix(x, y, z) where x, y, z are numbers
-mat = components2matrix(*comps0l)
-comps = matrix2components(*comps0l, mat)
-assert(list(comps) == comps0l)
+# Case 1. in docstring
+mat = components2matrix(1.0, 0.0, 0.0)
+assert(mat.shape == (1, 3))
+assert(np.all(mat == comps1))
 
+match = "Number of arguments must be 1 or 3"
+# components2matrix(1, 2)
+assert_raises(ValueError, components2matrix, [1, 2], match=match)
+# components2matrix(1, 2, 3, 4)
+assert_raises(ValueError, components2matrix, [1, 2, 3, 4], match=match)
+# components2matrix([1, 2, 3], 1)
+assert_raises(ValueError, components2matrix, [[1, 2, 3], 1], match=match)
 
-comps0 = ([1.0], [0.0], [0.0])
+match = 'If the first input is a number, all inputs must numbers'
+# components2matrix(1, [2], 3)
+assert_raises(ValueError, components2matrix, [1, [2], 3], match=match)
+# components2matrix(1, (2,), 3)
+assert_raises(ValueError, components2matrix, [1, (2,), 3], match=match)
+match = 'If the first input is not numeric, all inputs have same type'
+# components2matrix([1], 2, 3)
+assert_raises(ValueError, components2matrix, [[1], 2, 3], match=match)
 
-# components2matrix(x, y, z) where x, y, z are lists
-mat = components2matrix(*comps0)
-comps = matrix2components(*[*comps0, mat])
-assert(comps == comps0)
+match = 'All inputs must be number, list, tuple, or numpy.ndarray'
+# components2matrix({}, {}, {})
+assert_raises(ValueError, components2matrix, [{}, {}, {}], match=match)
 
+# Case 2. in docstring
+match = 'All arguments must have same length'
+# components2matrix([1, 2], [0], [0])
+assert_raises(ValueError, components2matrix, [[1, 2], [0], [0]], match=match)
+# components2matrix((1, 2), (0, ), (0, ))
+assert_raises(ValueError, components2matrix, [(1, 2), (0, ), (0, )], match=match)
 
-comps0 = ([1.0, 2.0], [0.0, 0.0], [0.0, 0.0])
+mat = components2matrix([1.0], [0.0], [0.0])
+assert(mat.shape == (1, 3))
+assert(np.all(mat == comps1))
 
-# components2matrix(x, y, z) where x, y, z are lists
-mat = components2matrix(*comps0)
-comps = matrix2components(*comps0, mat)
-assert(comps == comps0)
+mat = components2matrix([1.0, 2.0], [0.0, 0.0], [0.0, 0.0])
+assert(mat.shape == (2, 3))
+assert(np.all(mat[0, :] == comps2[0, :]))
+assert(np.all(mat[1, :] == comps2[1, :]))
 
+# Case 3. in docstring
+mat = components2matrix((1.0), (0.0), (0.0))
+assert(mat.shape == (1, 3))
+assert(np.all(mat == comps1))
 
-comps0 = (np.array(1), np.array(0), np.array(0))
+mat = components2matrix((1.0, 2.0), (0.0, 0.0), (0.0, 0.0))
+assert(mat.shape == (2, 3))
+assert(np.all(mat[0, :] == comps2[0, :]))
+assert(np.all(mat[1, :] == comps2[1, :]))
 
-# components2matrix(x, y, z) where x, y, z are scalar numpy.ndarrays
-mat = components2matrix(*comps0)
-comps = matrix2components(*comps0, mat)
-assert(comps == comps0)
+# Case 4. in docstring
+mat = components2matrix(np.array(1), np.array(0), np.array(0))
+assert(mat.shape == (1, 3))
+assert(np.all(mat == comps1))
 
+mat = components2matrix(np.array([1, 2]), np.array([0, 0]), np.array([0, 0]))
+assert(mat.shape == (2, 3))
+assert(np.all(mat == comps2))
 
-comps0 = (np.array([1.0, 2.0]), np.array([0.0, 0.0]), np.array([0.0, 0.0]))
+match = 'All numpy.ndarrays must be 1D'
+arg = [np.array([[1, 2], [3, 4]]), np.array([0, 0]), np.array([0, 0])]
+# components2matrix(arg[0])
+assert_raises(ValueError, components2matrix, arg, match=match)
 
-# components2matrix(x, y, z) where x, y, z are shape = (2, ) numpy.ndarrays
-mat = components2matrix(*comps0)
-comps = matrix2components(*comps0, mat)
-for i in range(3):
-  assert(np.all(comps[i] == comps0[i]))
+match = 'All numpy.ndarrays must have same shape[0]'
+arg = [np.array([1, 2]), np.array([1, 2]), np.array([1, 2, 3])]
+# components2matrix(arg[0])
+assert_raises(ValueError, components2matrix, arg, match=match)
 
 
 # One input
-comps0l = [1.0, 0.0, 0.0]
-comps0t = (1.0, 0.0, 0.0)
 
-# components2matrix([x, y, z]) where x, y, z are numbers
-mat = components2matrix(comps0l)
-comps = matrix2components(*[*comps0l, mat])
-assert(list(comps) == comps0l)
+match = 'Input list/tuple must have three elements'
+# components2matrix([1.0, 0.0])
+assert_raises(ValueError, components2matrix, [[1.0, 0.0]], match=match)
 
-# components2matrix((x, y, z)) where x, y, z are numbers
-mat = components2matrix(comps0t)
-comps = matrix2components(*[*comps0t, mat])
-assert(comps == comps0t)
+# Case 5. in docstring
+mat = components2matrix([1.0, 0.0, 0.0])
+assert(mat.shape == (1, 3))
+assert(np.all(mat == comps1))
 
-comps0l = [ [1.0, 0.0, 0.0], [2.0, 0.0, 0.0] ]
-comps0t = ( (1.0, 0.0, 0.0), (2.0, 0.0, 0.0) )
+# Case 6. in docstring
+mat = components2matrix((1.0, 0.0, 0.0))
+assert(mat.shape == (1, 3))
+assert(np.all(mat == comps1))
 
-# components2matrix([[x, y, z], ...]) where x, y, z are numbers
-mat = components2matrix(comps0l)
-comps = matrix2components(comps0l, mat)
-assert(comps == comps0l)
+# Case 7. in docstring
+mat = components2matrix([[1, 0, 0], [2, 0, 0]])
+assert(mat.shape == (2, 3))
+assert(np.all(mat == comps2))
 
-# components2matrix([(x, y, z), ...]) where x, y, z are numbers
-mat = components2matrix(list(comps0t))
-comps = matrix2components(list(comps0t), mat)
-assert(comps == list(comps0t))
+# Case 8. in docstring
+mat = components2matrix([np.array([1, 0, 0]), np.array([2, 0, 0])])
+assert(mat.shape == (2, 3))
+assert(np.all(mat == comps2))
 
-# components2matrix(((x, y, z), ...)) where x, y, z are numbers
-mat = components2matrix(comps0t)
-comps = matrix2components(comps0t, mat)
-assert(comps == comps0t)
+mat = components2matrix([
+  np.array([1, 0, 0]).reshape(1, 3),
+  np.array([2, 0, 0]).reshape(1, 3)])
+assert(mat.shape == (2, 3))
+assert(np.all(mat == comps2))
 
-# components2matrix(([x, y, z], ...)) where x, y, z are numbers
-mat = components2matrix(tuple(comps0t))
-comps = matrix2components(tuple(comps0t), mat)
-assert(comps == tuple(comps0t))
+# Mis-match of number types allowed. Coerced to common type by numpy.array()
+mat = components2matrix([[1.0, 0, 0], [2, 0, 0]])
+assert(mat.shape == (2, 3))
+assert(np.all(mat == comps2))
 
-comps0n = [np.array([1.0, 0.0, 0.0]), np.array([2.0, 0.0, 0.0])]
+# Case 8. in docstring
+mat = components2matrix(((1, 0, 0), (2, 0, 0)))
+assert(mat.shape == (2, 3))
+assert(np.all(mat == comps2))
 
-# components2matrix([x, y, z]) where x, y, z are ndarrays
-mat = components2matrix(comps0n)
-comps = matrix2components(comps0n, mat)
-for i in range(len(comps0n)):
-  assert(np.all(comps[i] == comps0n[i]))
+# Case 9. in docstring
+mat = components2matrix((np.array([1, 0, 0]), np.array([2, 0, 0])))
+assert(mat.shape == (2, 3))
+assert(np.all(mat == comps2))
 
-# components2matrix((x, y, z)) where x, y, z are ndarrays
-mat = components2matrix(tuple(comps0n))
-comps = matrix2components(tuple(comps0n), mat)
-for i in range(len(comps0n)):
-  assert(np.all(comps[i] == tuple(comps0n[i])))
 
-# components2matrix((3, ) ndarray)
-mat = components2matrix(comps0n[0])
-comps = matrix2components(comps0n[0], mat)
-assert(np.all(comps == comps0n[0]))
+# Case 7 and 8 error cases
+match = 'If the first input is not numeric, all inputs must have same type'
+assert_raises(ValueError, components2matrix, [[[1, 0, 0], (2, 0, 0)]], match=match)
 
-# components2matrix((1, 3) ndarray)
-mat = components2matrix(comps0n[0].reshape((1, 3)))
-comps = matrix2components(comps0n[0].reshape((1, 3)), mat)
-assert(np.all(comps == comps0n[0].reshape((1, 3))))
+# Case 11. in docstring
+mat = components2matrix(np.array([1.0, 0.0, 0.0]))
+assert(np.all(mat == comps1))
 
-# components2matrix((2, 3) ndarray)
-mat = components2matrix(np.array(comps0n))
-comps = matrix2components(np.array(comps0n), mat)
-assert(np.all(comps == np.array(comps0n)))
+
+match = 'Input 1-D numpy.ndarray must have three elements'
+# components2matrix(np.array([1.0, 0.0]))
+assert_raises(ValueError, components2matrix, [np.array([1.0, 0.0])], match=match)
+
+# Case 12. in docstring
+comps1c = comps1.copy()
+comps1c.shape = (1, 3)
+mat = components2matrix(comps1c)
+assert(mat.shape == (1, 3))
+assert(np.all(mat == comps1))
+
+#x
+match = 'Input 1-D numpy.ndarray must have three elements'
+# components2matrix(np.array([1.0, 0.0]))
+assert_raises(ValueError, components2matrix, [np.array([1.0, 0.0])], match=match)
+
+match = 'Input numpy.ndarray must be 1D or 2D'
+# components2matrix(np.array([[[1.0, 0.0, 0.0]]]))
+assert_raises(ValueError, components2matrix, [np.array([[[1.0, 0.0, 0.0]]])], match=match)
+
+# Case 13. in docstring
+mat = components2matrix(comps2)
+assert(mat.shape == (2, 3))
+assert(np.all(mat == comps2))
+
+match = 'Input must be list, tuple, or numpy.ndarray'
+assert_raises(ValueError, components2matrix, [None], match=match)
+
+match = 'Input must be list, tuple, or numpy.ndarray'
+assert_raises(ValueError, components2matrix, [{}], match=match)
+
+match = 'Input numpy.ndarray must have three columns'
+arg = [np.array([[1.0, 0.0, 0.0, 0.0]])]
+# components2matrix(arg)
+assert_raises(ValueError, components2matrix, arg, match=match)
+
+arg = [np.array([[1.0, 0.0, 0.0, 0.0], [1.0, 0.0, 0.0, 0.0]])]
+# components2matrix(arg)
+assert_raises(ValueError, components2matrix, arg, match=match)
+

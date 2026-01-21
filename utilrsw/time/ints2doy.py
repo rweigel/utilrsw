@@ -9,7 +9,7 @@ def ints2doy(t):
 
   import numpy as np
 
-  from .doy import doy
+  from .ymd2doy import ymd2doy
 
   in_type = type(t)
 
@@ -25,7 +25,7 @@ def ints2doy(t):
   if len(t.shape) == 1:
     day_of_year = datetime(*t).timetuple().tm_yday
   else:
-    day_of_year = doy(t[:,:3])
+    day_of_year = ymd2doy(t[:,:3])
     t = np.column_stack((t[:, 0], day_of_year, t[:, 3], t[:, 4], t[:, 5]))
 
   if in_type == np.ndarray:

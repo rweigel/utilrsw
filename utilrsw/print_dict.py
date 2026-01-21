@@ -1,6 +1,3 @@
-
-import numpy
-
 import utilrsw
 
 def print_dict(d: dict, sort_dicts=False, indent=0, style=None) -> None:
@@ -12,6 +9,11 @@ def format_dict(d: dict, sort_dicts=False, indent=0, style=None) -> str:
   """Format a dictionary for printing"""
   if not isinstance(d, dict):
     return str(d)
+
+  try:
+    import numpy
+  except ImportError:
+    numpy = None
 
   styles = ['json', 'yaml', 'pprint', None]
   if style not in styles:
@@ -55,7 +57,7 @@ def format_dict(d: dict, sort_dicts=False, indent=0, style=None) -> str:
           else:
             # TODO: If element is string, they are not quoted in the following. Fix this.
             msg += _print_to_string(f": [{value[0]}, {value[1]}, ..., {value[len(value)-2]}, {value[len(value)-1]} ({len(value)} elements)")
-        elif isinstance(value, numpy.ndarray):
+        elif numpy is not None and isinstance(value, numpy.ndarray):
           if value.ndim == 1:
             if len(value) < 5:
               msg += _print_to_string(f": {value.tolist()}")

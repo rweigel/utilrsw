@@ -20,22 +20,31 @@ def matrix2components(*args):
     return tuple(out)
 
   if len(args) == 2:
+    number_types = (int, float, np.number)
     # Input was components2matrix(v, mat)
     mat = args[1]
     if isinstance(args[0], (list, tuple)):
       if isinstance(args[0][0], list):
         return [list(row) for row in mat.tolist()]
-      if isinstance(args[0][0], tuple):
+      elif isinstance(args[0][0], tuple):
         ret = [tuple(row) for row in mat.tolist()]
         if isinstance(args[0], list):
           return ret
         if isinstance(args[0], tuple):
           return tuple(ret)
-      if isinstance(args[0][0], np.ndarray):
+      elif isinstance(args[0][0], np.ndarray):
         ret = [np.array(row) for row in mat.tolist()]
         if isinstance(args[0], list):
           return ret
         if isinstance(args[0], tuple):
           return tuple(ret)
+      elif isinstance(args[0][0], number_types):
+        if isinstance(args[0], list):
+          return mat[0, :].tolist()
+        if isinstance(args[0], tuple):
+          return tuple(mat[0, :].tolist())
+      else:
+        raise ValueError('Unsupported input type.')
+
     if isinstance(args[0], np.ndarray):
       return mat.reshape(args[0].shape)

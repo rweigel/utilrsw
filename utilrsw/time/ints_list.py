@@ -25,6 +25,15 @@ def ints_list(dto, dtf, dt_delta, end=False):
   """
   import datetime
 
+  n = 7
+  if not isinstance(dto, datetime.datetime):
+    n = min(n, len(dto))
+    dto = datetime.datetime(*dto)
+
+  if not isinstance(dtf, datetime.datetime):
+    n = min(n, len(dtf))
+    dtf = datetime.datetime(*dtf)
+
   t = []
   delta = datetime.timedelta(**dt_delta)
   i = 0
@@ -35,7 +44,8 @@ def ints_list(dto, dtf, dt_delta, end=False):
       break
 
     i = i + 1
-    t.append([dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, dt.microsecond])
+    ta = [dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, dt.microsecond]
+    t.append(ta[:n])
 
     if dt >= dtf:
       break

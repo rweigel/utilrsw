@@ -149,6 +149,7 @@ def factory(**args):
 
 
 def start(app_function, configs, wait=None):
+  """Start the server in a background process."""
   import atexit
   import multiprocessing
 
@@ -168,6 +169,7 @@ def start(app_function, configs, wait=None):
     _wait(wait['url'], retries=wait['retries'], delay=wait['delay'])
 
   return process
+
 
 def stop(process):
   try:
