@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import atexit
 import inspect
 import datetime
 import logging
@@ -18,6 +19,7 @@ def logger(name=None,
            datefmt="%Y-%m-%dT%H:%M:%S.%f",
            utc_timestamps=True,
            rm_existing=True,
+           rm_empty=True,
            rm_string='',
            color=None,
            disable_existing_loggers=False,
@@ -261,5 +263,21 @@ def logger(name=None,
       handler.setFormatter(CustomFormatter(fmt=handler.formatter._fmt, color=color, name=handler.name))
     else:
       handler.setFormatter(CustomFormatter(fmt=handler.formatter._fmt, color=False, name=handler.name))
+
+  if rm_empty:
+    def _rm_if_empty(path):
+      if not path:
+        return
+      if os.path.exists(path) and os.path.getsize(path) == 0:
+        if debug_logger:
+          print(f"Removing empty log file: {path}")
+        os.remove(path)
+
+    def _cleanup_empty_logs(file_log=file_log, file_error=file_error):
+      logging.shutdown()
+      _rm_if_empty(file_log)
+      _rm_if_empty(file_error)
+
+    atexit.register(_cleanup_empty_logs)
 
   return logging.getLogger(name)
