@@ -30,7 +30,6 @@ def flatten_dicts(d, parent_key='', sep='/', simplify=False):
     df = flatten_dicts(d, sep='')
     keys_joined = "".join(list(df.keys()))
     possible_seps = ['/', '.', '_', '-', '#', '|', '&', '+', '%', '!']
-    sep = None
 
     for n in range(1, 11):
       for possible_sep in possible_seps:

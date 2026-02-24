@@ -21,11 +21,14 @@ flatten_dicts = flatten_dicts.flatten_dicts
 from . import logger as logger
 logger = logger.logger
 
-from . import mkdir as mkdir
-mkdir = mkdir.mkdir
-
 from . import map_dict as map_dict
 map_dict = map_dict.map_dict
+
+from . import merge_dicts as merge_dicts
+merge_dicts = merge_dicts.merge_dicts
+
+from . import mkdir as mkdir
+mkdir = mkdir.mkdir
 
 from . import print_dict as print_dict
 format_dict = print_dict.format_dict
@@ -66,9 +69,10 @@ write = write.write
 from . import xprint as xprint
 xprint = xprint.xprint
 
-from . import svg as svg
+from . import git as git
 from . import mpl as mpl
 from . import net as net
 from . import np as np
+from . import svg as svg
 from . import test as test
 from . import time as time

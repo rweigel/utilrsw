@@ -1,4 +1,4 @@
-def ints_list(dto, dtf, dt_delta, end=False):
+def ints_list(dto, dtf, dt_delta, n=7, end=False):
   """Generate list of integer time lists given datetime start, end, and delta.
 
   Each list has 7 elements: [year, month, day, hour, minute, second, microsecond]
@@ -25,7 +25,6 @@ def ints_list(dto, dtf, dt_delta, end=False):
   """
   import datetime
 
-  n = 7
   if not isinstance(dto, datetime.datetime):
     n = min(n, len(dto))
     dto = datetime.datetime(*dto)
