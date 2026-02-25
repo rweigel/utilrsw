@@ -56,7 +56,7 @@ def format_dict(d: dict, sort_dicts=False, indent=0, style=None) -> str:
             msg += _print_to_string(f"{value}")
           else:
             # TODO: If element is string, they are not quoted in the following. Fix this.
-            msg += _print_to_string(f": [{value[0]}, {value[1]}, ..., {value[len(value)-2]}, {value[len(value)-1]} ({len(value)} elements)")
+            msg += _print_to_string(f": [{value[0]}, {value[1]}, ..., {value[len(value)-2]}, {value[len(value)-1]}] ({len(value)} elements)")
         elif numpy is not None and isinstance(value, numpy.ndarray):
           if value.ndim == 1:
             if len(value) < 5:
@@ -80,6 +80,7 @@ def format_dict(d: dict, sort_dicts=False, indent=0, style=None) -> str:
 
   return msg.rstrip('\n')
 
+
 def _print_to_string(*args, **kwargs):
   # https://stackoverflow.com/a/39823534
   import io
@@ -88,6 +89,7 @@ def _print_to_string(*args, **kwargs):
   contents = output.getvalue()
   output.close()
   return contents
+
 
 if __name__ == "__main__":
 

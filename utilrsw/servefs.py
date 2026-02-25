@@ -18,16 +18,17 @@ def servefs(config=None):
 
   .. code-block:: python
 
+      import utilrsw
+      import uvicorn
+
       app_config = {
           "debug": True,
           "root": ".",
           "stream_threshold": 5 * 1024 * 1024
       }
 
-      import utilrsw
-      import uvicorn
       app = utilrsw.servefs(app_config)
-      uvicorn.run(app, host="0.0.0", port=6002)
+      uvicorn.run(app, host="0.0.0.0", port=6002)
 
   Using a wrapper that calls Uvicorn from the command line (needed for
   multiple workers):
@@ -128,7 +129,7 @@ def servefs(config=None):
   @app.head("{path:path}")
   async def head_request(path: str = ""):
       """Handle HEAD requests."""
-      full_path = pathlib.Path(os.path.join(root, path))
+      full_path = pathlib.Path(os.path.join(root, path[1:]))
 
       # Add Last-Modified header for files
       if full_path.is_file():
@@ -167,7 +168,7 @@ def servefs(config=None):
 
         href = urllib.parse.quote(linkname, errors="surrogatepass")
         text = html.escape(displayname, quote=False)
-        modified = datetime.datetime.fromtimestamp(fullname.stat().st_mtime)
+        modified = datetime.datetime.fromtimestamp(fullname.stat().st_mtime, tz=datetime.timezone.utc)
         modified = modified.strftime('%Y-%m-%dT%H:%M:%SZ')
         a = f'<a href="{href}">{text}</a>'
         rows.append(f'      <tr><td>{a}</td><td>{size}</td><td>{modified}</td></tr>')
@@ -196,7 +197,7 @@ _DIR_LISTING = """
         </tr>
       </thead>
       <tbody>
-  __DIRECTORY_HTML__
+        __DIRECTORY_HTML__
       </tbody>
     </table>
   </body>

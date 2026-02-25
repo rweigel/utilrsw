@@ -1,6 +1,9 @@
 from . import timedelta_to_isoduration as timedelta_to_isoduration
 timedelta_to_isoduration = timedelta_to_isoduration.timedelta_to_isoduration
 
+from . import isoduration_to_timedelta as isoduration_to_timedelta
+isoduration_to_timedelta = isoduration_to_timedelta.isoduration_to_timedelta
+
 from . import ints2doy as ints2doy
 ints2doy = ints2doy.ints2doy
 
