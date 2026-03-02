@@ -55,7 +55,7 @@ def servefs(config=None):
   import urllib.parse
 
   from fastapi import FastAPI, HTTPException
-  from fastapi.responses import HTMLResponse, FileResponse, StreamingResponse
+  from fastapi.responses import HTMLResponse, FileResponse, StreamingResponse, RedirectResponse
   from fastapi.middleware.cors import CORSMiddleware
 
   import logging
@@ -115,6 +115,11 @@ def servefs(config=None):
     # If the path is not a directory, send 404 error
     if not full_path.is_dir():
         raise HTTPException(status_code=404, detail="File or directory not found")
+
+    # Redirect to trailing slash for directories
+    if not path.endswith('/'):
+      redirect_path = path + '/'
+      return RedirectResponse(url=redirect_path, status_code=301)
 
     # Generate directory listing
     try:
@@ -203,3 +208,4 @@ _DIR_LISTING = """
   </body>
   </html>
   """
+
