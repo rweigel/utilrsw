@@ -12,6 +12,9 @@ get_path = get_path.get_path
 from . import get_func as get_func
 get_func = get_func.get_func
 
+from . import hline as hline
+hline = hline.hline
+
 from . import file_parts as file_parts
 file_parts = file_parts.file_parts
 
