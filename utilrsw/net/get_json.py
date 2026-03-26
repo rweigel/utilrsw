@@ -14,7 +14,6 @@ import tempfile
 
 def get_json(url, cache_dir=None, headers=None, timeout=20, max_retries=5, diffs=False, csopts=None):
 
-  import xmltodict
   from requests.adapters import HTTPAdapter
 
   if cache_dir is None:
@@ -46,6 +45,7 @@ def get_json(url, cache_dir=None, headers=None, timeout=20, max_retries=5, diffs
 
   try:
     if resp.headers['Content-Type'].endswith('xml'):
+      import xmltodict
       text = resp.text
       json_dict = xmltodict.parse(text)
     else:
