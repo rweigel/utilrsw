@@ -110,7 +110,7 @@ def get_conditional(url, file=None, gzip=False, stream=False, progress=False, lo
       connect=3,
       read=3,
       status_forcelist=[429],
-      method_whitelist=["GET"],
+      allowed_methods=["GET"],
       backoff_factor=1
   )
   adapter = HTTPAdapter(max_retries=retry_strategy)
