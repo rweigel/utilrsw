@@ -7,19 +7,19 @@ def flatten_dicts(d, parent_key='', sep='/', simplify=False):
         'd': 3
       }
     }
-    d = flatten_dict(d)
+    d = flatten_dicts(d)
     d = {
       'a': 1,
       'b/c': 2,
       'b/d' 3
     }
-    d = flatten_dict(d, sep='.')
+    d = flatten_dicts(d, sep='.')
     d = {
       'a': 1,
       'b.c': 2,
       'b.d' 3
     }
-    d = flatten_dict(d, sep='.', parent_key='Z')
+    d = flatten_dicts(d, sep='.', parent_key='Z')
     d = {
       'Z.a': 1,
       'Z.b.c': 2,
