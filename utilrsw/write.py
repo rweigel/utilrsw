@@ -74,6 +74,11 @@ def write(fname, data, logger=None):
 
   if '.json' == ext:
     try:
+      data = _to_json_safe(data)
+    except Exception as e:
+      emsg = f"_to_json_safe() raised: {e}"
+      _finish(fname, logger=logger, e=e, emsg=emsg)
+    try:
       with open(fname, "w") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
       _finish(fname, logger=logger)
@@ -111,3 +116,20 @@ def _finish(fname, logger=None, e=None, emsg=None):
 
   if logger is not None:
     logger.info(f"Wrote {fname}")
+
+def _to_json_safe(obj):
+  import numpy as np
+  if isinstance(obj, np.ndarray):
+    return [_to_json_safe(i) for i in obj.tolist()]
+  if isinstance(obj, np.floating):
+    return float(obj)
+  if isinstance(obj, np.integer):
+    return int(obj)
+  if isinstance(obj, np.generic):
+    return obj.item()
+  if isinstance(obj, dict):
+    return {(k.item() if isinstance(k, np.generic) else k): _to_json_safe(v) for k, v in obj.items()}
+  if isinstance(obj, (list, tuple)):
+    return [_to_json_safe(i) for i in obj]
+  return obj
+
