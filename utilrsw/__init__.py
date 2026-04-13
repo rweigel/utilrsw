@@ -1,5 +1,8 @@
 # TODO: Automate.
 
+from importlib.metadata import version
+__version__ = version("utilrsw")
+
 from . import array_to_dict as array_to_dict
 array_to_dict = array_to_dict.array_to_dict
 
@@ -12,8 +15,7 @@ get_path = get_path.get_path
 from . import get_func as get_func
 get_func = get_func.get_func
 
-from . import hline as hline
-hline = hline.hline
+from .hline import hline
 
 from . import file_parts as file_parts
 file_parts = file_parts.file_parts

@@ -114,6 +114,7 @@ def logger(name=None,
       """Only show log messages with log level below ERROR."""
       return record.levelno < logging.ERROR
 
+  log_level = log_level.upper()
   if console_level is None:
     console_level = log_level
   if file_level is None:
