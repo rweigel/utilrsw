@@ -6,26 +6,41 @@ def insert_nans(times, matrix, max_gap=None):
   # Compute time differences
   time_diffs = [t2 - t1 for t1, t2 in zip(times[:-1], times[1:])]
 
-  # If max_gap is None, set to minimum time difference
+  unique_diffs, counts = numpy.unique(time_diffs, return_counts=True)
+  # Set max_gap to most common time difference if not provided
   if max_gap is None:
+    max_gap = unique_diffs[numpy.argmax(counts)]
+    #print(f"  No max_gap provided, using most common time difference: {max_gap}")
+
+  if False:
+    print("Time difference histogram:")
+    for diff, count in zip(unique_diffs, counts):
+      print(f"  {diff}: {count} occurrences")
+
+  # If max_gap is None, set to minimum time difference
+  if isinstance(max_gap, str) and max_gap.lower() == 'min':
     max_gap = min(time_diffs)
 
   # Identify indices where time gap exceeds max_gap
   gap_indices = [i for i, diff in enumerate(time_diffs) if diff > max_gap]
 
   # Add a time entry at each gap index for plotting purposes
+  # Always create a plain independent list to avoid aliasing with custom containers.
+  timesc = list(times)
   for idx in reversed(gap_indices):
-    times.insert(idx + 1, times[idx] + time_diffs[idx] / 2)
+    gap_time = timesc[idx] + (timesc[idx + 1] - timesc[idx]) / 2
+    timesc.insert(idx + 1, gap_time)
 
   # Add row of NaNs at each gap index
   matrixc = matrix.copy()
+
   # Convert to float to allow NaN values
   matrixc = matrixc.astype(float)
 
   for idx in reversed(gap_indices):
     matrixc = numpy.insert(matrixc, idx + 1, numpy.nan, axis=0)
 
-  return times, matrixc
+  return timesc, matrixc
 
 
 def insert_nans_demo():

@@ -155,9 +155,9 @@ def get_conditional(url, file=None, gzip=False, stream=False, progress=False, lo
           if chunk:  # Filter out keep-alive chunks
             f.write(chunk)
             downloaded_size += len(chunk)
-            progress = (downloaded_size / total_size) * 100 if total_size else 0
             if progress:
-              print(f"\rProgress: {progress:.0f}%", end="")
+              percent = (downloaded_size / total_size) * 100 if total_size else 0
+              print(f"\rProgress: {percent:.0f}%", end="")
       if logger is not None:
         logger.info(f"Streamed: {downloaded_size} bytes to {file_tmp}")
 

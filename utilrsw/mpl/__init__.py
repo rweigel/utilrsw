@@ -1,4 +1,3 @@
-
 from .adjust_legend import adjust_legend as adjust_legend
 
 from .format_exponent import format_exponent as format_exponent
