@@ -61,7 +61,7 @@ def servefs(config=None):
   import logging
   logging.basicConfig()
   logger = logging.getLogger("servefs")
-  logger.setLevel(logging.DEBUG)
+  #logger.setLevel(logging.DEBUG)
 
   if config is None:
     config = {}
