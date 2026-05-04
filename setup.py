@@ -1,11 +1,7 @@
 import sys
 from setuptools import setup, find_packages
 
-install_requires = ["typeguard"]
-
 extras_require = {
-    "full": install_requires,
-    "minimal": [],
     "mpl": ["matplotlib"],
     "net": ["requests", "xmltodict", "requests_cache>=1.2.1", "deepdiff>=6.3.1"],
     "svg": ["lxml"],
@@ -14,6 +10,10 @@ extras_require = {
     "xprint": [],
     "release": ["twine", "build"] + ([] if sys.version_info >= (3, 11) else ["tomli"]),
 }
+
+extras_require["full"] = [pkg for deps in extras_require.values() for pkg in deps]
+
+install_requires = ["typeguard"]
 
 setup(
     name='utilrsw',

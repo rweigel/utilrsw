@@ -1,25 +1,42 @@
 # utilrsw
 
-Misc Python functions
+Misc Python functions.
 
+# Install with minimal dependencies
 
-Install all dependencies
 ```
-pip install utilrsw[full]
-```
-
-Install no dependencies
-```
-pip install utilrsw[minimal]
+git clone https://github.com/rweigel/utilrsw
+pip install -e .
 ```
 
-Install with subset of dependencies
+To use in `setup.py`, use
+
+``
+install_requires = [
+  ...
+  "utilrsw @ git+https://github.com/rweigel/datetick@main"
+]
 ```
-pip install utilrsw[mpl]
-pip install utilrsw[net] 
-pip install utilrsw[svg]
-pip install utilrsw[time]
-pip install utilrsw[test]
-pip install utilrsw[xprint]
-pip install utilrsw[release]
+
+In `pyproject.toml`, use
+```
+dependencies = [..., "utilrsw @ git+https://github.com/rweigel/datetick@main"]
+
+# Install with dependencies
+
+```
+pip install -e utilrsw[X]
+# where
+# X is one of mpl, net, svg, time, test, xprint, release
+# e.g.,
+pip install -e utilrsw[net]
+# or a comma-separated list, e.g.,
+pip install -e utilrsw[mpl,net]
+```
+
+Also,
+
+```
+utilrsw[net] @ git+https://github.com/rweigel/datetick@main
+utilrsw[mpl,net] @ git+https://github.com/rweigel/datetick@main
 ```
