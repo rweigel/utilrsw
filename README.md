@@ -25,13 +25,13 @@ dependencies = [..., "utilrsw @ git+https://github.com/rweigel/datetick@main"]
 # Install with dependencies
 
 ```
-pip install -e utilrsw[X]
+pip install -e '.utilrsw[X]'
 # where
-# X is one of mpl, net, svg, time, test, xprint, release
+# X is one of mpl, net, svg, scm, time, test, xprint
 # e.g.,
-pip install -e utilrsw[net]
+pip install -e 'utilrsw[net]'
 # or a comma-separated list, e.g.,
-pip install -e utilrsw[mpl,net]
+pip install -e 'utilrsw[mpl,net]'
 ```
 
 Also,

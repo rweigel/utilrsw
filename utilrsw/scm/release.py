@@ -11,6 +11,13 @@ def main(toml_path, pypi_config_file, increment_version=None, dry_run=False):
 
   toml = _read_toml(toml_path)
 
+  if not os.path.exists(pypi_config_file):
+    if dry_run:
+      print(f"[dry-run] Error: No PyPi config file at {pypi_config_file}")
+    else:
+      print(f"Could not find PyPi config file at {pypi_config_file}")
+      sys.exit(1)
+
   version = toml.get('project', {}).get('version')
   if not version:
     print(f"Could not find [project] version in {toml_path}")
@@ -63,10 +70,13 @@ def _increment_version(toml_path, version, increment, dry_run=False):
     toml_text = toml_text.replace(old_line, new_line, 1)
     if dry_run:
       print(f"[dry-run] Would increment version {version} -> {new_version} in {toml_path}")
+      print(f"[dry-run] Would commit: git add {toml_path} && git commit -m 'Release {new_version}'")
     else:
       with open(toml_path, 'w') as f:
         f.write(toml_text)
       print(f"Incremented version {version} -> {new_version} in {toml_path}")
+      subprocess.run(['git', 'add', toml_path], check=True)
+      subprocess.run(['git', 'commit', '-m', f'Release {new_version}'], check=True)
     version = new_version
     return version
 
@@ -127,7 +137,6 @@ def _cli():
   )
 
   return parser.parse_args()
-
 
 def _run(cmd_list, dry_run):
   if dry_run:

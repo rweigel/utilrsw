@@ -8,7 +8,7 @@ extras_require = {
     "test": [],
     "time": [],
     "xprint": [],
-    "release": ["twine", "build"] + ([] if sys.version_info >= (3, 11) else ["tomli"]),
+    "scm": ["twine", "build"] + ([] if sys.version_info >= (3, 11) else ["tomli"]),
 }
 
 extras_require["full"] = [pkg for deps in extras_require.values() for pkg in deps]
