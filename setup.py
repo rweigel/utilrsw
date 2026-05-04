@@ -1,29 +1,7 @@
+import sys
 from setuptools import setup, find_packages
 
-# Need requests_cache 1.2 because of
-# https://github.com/requests-cache/requests-cache/issues/927
-# and fact that https://spase-metadata.org/ returns json with
-# "Content-Type": "application/json; charset=utf-8"
-# (charset=utf-8 is redundant and causes requests_cache not not cache
-# _decoded_content)
-# See also utilrsw/get_json.py/_requests_cache_bug()
 install_requires = ["typeguard"]
-
-# Make the default install include the full set of dependencies. Provide a
-# "minimal" extra to allow installing with no dependencies when desired.
-
-# Installs all deps
-#   pip install utilrsw
-#   pip install utilrsw[full]
-# Installs no deps
-#   pip install utilrsw[minimal]
-
-# pip install utilrsw[mpl]
-# pip install utilrsw[net]
-# pip install utilrsw[svg]
-# pip install utilrsw[time]
-# pip install utilrsw[test]
-# pip install utilrsw[xprint]
 
 extras_require = {
     "full": install_requires,
@@ -33,7 +11,8 @@ extras_require = {
     "svg": ["lxml"],
     "test": [],
     "time": [],
-    "xprint": []
+    "xprint": [],
+    "release": ["twine", "build"] + ([] if sys.version_info >= (3, 11) else ["tomli"]),
 }
 
 setup(
@@ -51,4 +30,9 @@ setup(
     long_description_content_type='text/markdown',
     install_requires=install_requires,
     extras_require=extras_require,
+    entry_points={
+        'console_scripts': [
+            'scm-release=utilrsw.scm.release:cli_entry',
+        ],
+    },
 )
