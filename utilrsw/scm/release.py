@@ -70,13 +70,14 @@ def _increment_version(toml_path, version, increment, dry_run=False):
     toml_text = toml_text.replace(old_line, new_line, 1)
     if dry_run:
       print(f"[dry-run] Would increment version {version} -> {new_version} in {toml_path}")
-      print(f"[dry-run] Would commit: git add {toml_path} && git commit -m 'Release {new_version}'")
+      print(f"[dry-run] Would commit: git add {toml_path} && git commit -m 'Release {new_version}' && git push")
     else:
       with open(toml_path, 'w') as f:
         f.write(toml_text)
       print(f"Incremented version {version} -> {new_version} in {toml_path}")
       subprocess.run(['git', 'add', toml_path], check=True)
       subprocess.run(['git', 'commit', '-m', f'Release {new_version}'], check=True)
+      subprocess.run(['git', 'push'], check=True)
     version = new_version
     return version
 
