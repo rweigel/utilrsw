@@ -1,6 +1,5 @@
 def plt_config():
   import matplotlib
-  from matplotlib import pyplot as plt
   matplotlib.use('Agg')
   matplotlib.pyplot.rcParams['font.family'] = 'Times New Roman'
   matplotlib.pyplot.rcParams['font.size'] = 15

@@ -1,66 +1,120 @@
-def insert_nans(times, matrix, max_gap=None):
-  """Insert NaN values in matrix where time gaps in times are greater than max_gap."""
+def insert_nans(x, matrix, x_thresh=None, y_thresh=None):
+  """Insert NaN values in matrix where x or y gaps are greater than a threshold.
+
+  For preventing Matplotlib from connecting points across large gaps.
+
+  Parameters:
+    x: list of `x` values (e.g. datetime objects or numeric timestamps)
+
+    matrix: 2D array-like of shape (nr, nc) or 1D array-like of shape (n,)
+
+    x_thresh: threshold for x gaps. If a gap between consecutive entries in
+              `x` exceeds this threshold, a NaN will be inserted in the
+              corresponding row of `matrix`. If None, no NaNs will be inserted
+              based on time gaps. If 'min', the minimum `x` gap will be
+              used as the threshold.
+
+    y_thresh: threshold for value gaps. If the absolute difference between
+              consecutive entries in `matrix` exceeds this threshold, a NaN
+              will be inserted in the corresponding row of `matrix`. Only
+              applicable if `matrix` is 1D or has only one column. If None,
+              no NaNs will be inserted.
+
+  """
 
   import numpy
 
-  # Compute time differences
-  time_diffs = [t2 - t1 for t1, t2 in zip(times[:-1], times[1:])]
+  matrixc = matrix.copy().astype(float)
 
-  unique_diffs, counts = numpy.unique(time_diffs, return_counts=True)
-  # Set max_gap to most common time difference if not provided
-  if max_gap is None:
-    max_gap = unique_diffs[numpy.argmax(counts)]
-    #print(f"  No max_gap provided, using most common time difference: {max_gap}")
+  if len(x) < 2:
+    return list(x), matrixc
+
+  y_values = None
+  if y_thresh is not None:
+    if matrixc.ndim == 1:
+      y_values = matrixc
+    else:
+      if matrixc.shape[1] != 1:
+        raise ValueError("y_thresh requires matrix to have exactly one column")
+      y_values = matrixc[:, 0]
+
+  # Compute x differences
+  x_diffs = [t2 - t1 for t1, t2 in zip(x[:-1], x[1:])]
+
+  unique_diffs, counts = numpy.unique(x_diffs, return_counts=True)
+  # Set x_thresh to most common x difference if not provided
+  if x_thresh is None:
+    x_thresh = unique_diffs[numpy.argmax(counts)]
+    #print(f"  No x_thresh provided, using most common x difference: {max_gap}")
 
   if False:
     print("Time difference histogram:")
     for diff, count in zip(unique_diffs, counts):
       print(f"  {diff}: {count} occurrences")
 
-  # If max_gap is None, set to minimum time difference
-  if isinstance(max_gap, str) and max_gap.lower() == 'min':
-    max_gap = min(time_diffs)
+  # If x_thresh is None, set to minimum x difference
+  if isinstance(x_thresh, str) and x_thresh.lower() == 'min':
+    x_thresh = min(x_diffs)
 
-  # Identify indices where time gap exceeds max_gap
-  gap_indices = [i for i, diff in enumerate(time_diffs) if diff > max_gap]
+  # Identify indices where x gap exceeds x_thresh
+  gap_indices = {i for i, diff in enumerate(x_diffs) if diff > x_thresh}
 
-  # Add a time entry at each gap index for plotting purposes
-  # Always create a plain independent list to avoid aliasing with custom containers.
-  timesc = list(times)
+  # Identify indices where y gap exceeds y_thresh
+  if y_values is not None:
+    y_diffs = numpy.abs(numpy.diff(y_values))
+    gap_indices.update(i for i, diff in enumerate(y_diffs) if diff > y_thresh)
+
+  gap_indices = sorted(gap_indices)
+
+  # Insert NaN in x and matrix at identified gap indices
+  xc = list(x)
   for idx in reversed(gap_indices):
-    gap_time = timesc[idx] + (timesc[idx + 1] - timesc[idx]) / 2
-    timesc.insert(idx + 1, gap_time)
-
-  # Add row of NaNs at each gap index
-  matrixc = matrix.copy()
-
-  # Convert to float to allow NaN values
-  matrixc = matrixc.astype(float)
+    gap_x = xc[idx] + (xc[idx + 1] - xc[idx]) / 2
+    xc.insert(idx + 1, gap_x)
 
   for idx in reversed(gap_indices):
     matrixc = numpy.insert(matrixc, idx + 1, numpy.nan, axis=0)
 
-  return timesc, matrixc
+  return xc, matrixc
 
 
 def insert_nans_demo():
   import numpy
   from datetime import datetime, timedelta
 
-  times = [datetime(2000,1,1)]
+
+  def _run_demo(x, matrix, x_thresh=None, y_thresh=None):
+    new_x, new_matrix = insert_nans(x, matrix, x_thresh=x_thresh, y_thresh=y_thresh)
+
+    print("Original x and matrix rows:")
+    for t, row in zip(x, matrix):
+      print(f"  {t}: {row}")
+
+    print(f"New x and matrix rows; x_thresh={x_thresh}, y_thresh={y_thresh}:")
+    for t, row in zip(new_x, new_matrix):
+      print(f"  {t}: {row}")
+
+
+  # datetime time gap
+  x = [datetime(2000,1,1)]
   for i in range(5):
     seconds = 1 if i != 2 else 3
-    times.append(times[-1] + timedelta(seconds=seconds))
+    x.append(x[-1] + timedelta(seconds=seconds))
 
   matrix = numpy.array([[i, i+1] for i in range(5)])
+  x_thresh = timedelta(seconds=2)
+  _run_demo(x, matrix, x_thresh=x_thresh, y_thresh=None)
 
-  # Insert NaN where gap > 2 seconds
-  new_times, new_matrix = insert_nans(times.copy(), matrix.copy(), max_gap=timedelta(seconds=2))
+  # integer time gap
+  x = [0, 1, 2, 5, 6]
+  matrix = numpy.array([[i, i + 10] for i in range(len(x))])
+  _run_demo(x, matrix, x_thresh=1, y_thresh=None)
 
-  print("Original times and matrix:")
-  for t, row in zip(times, matrix):
-    print(f"{t}: {row}")
+  # y value gap
+  x = [0, 1, 2, 3, 4]
+  matrix = numpy.array([0.0, 1.0, 2.0, 10.0, 11.0])
+  _run_demo(x, matrix, x_thresh=None, y_thresh=5)
 
-  print("New times and matrix:")
-  for t, row in zip(new_times, new_matrix):
-    print(f"{t}: {row}")
+
+if __name__ == "__main__":
+  insert_nans_demo()

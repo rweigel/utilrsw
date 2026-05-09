@@ -34,17 +34,18 @@ def merge_dicts(base, override, base_name='base', override_name='override', dept
       else:
         msgo = f"{key} = '{override[key]}' in {override_name} is"
         if base[key] == value:
-          msg = f"{logger_indent}No update: {msgo} same as in {base_name}."
-          xprint(msg)
+          if logger is not None:
+            msg = f"{logger_indent}No update: {msgo} same as in {base_name}."
+            logger.info(msg)
         else:
+          new[key] = value
           msg = f"{logger_indent}Update:    {msgo} different from {base_name} '{base[key]}'. "
           msg += f"Using {override_name} value."
-          xprint(msg)
-          new[key] = value
-
+          if logger is not None:
+            logger.info(msg)
   diff = deepdiff.DeepDiff(base, new, ignore_order=True)
   diff = json.loads(diff.to_json())
-  if not diff and depth == 0:
-    xprint(f"{logger_indent}No updates needed.")
+  if not diff and depth == 0 and logger is not None:
+    logger.info(f"{logger_indent}No updates needed.")
 
   return new, diff

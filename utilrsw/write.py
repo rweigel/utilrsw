@@ -118,6 +118,7 @@ def _finish(fname, logger=None, e=None, emsg=None):
     logger.info(f"Wrote {fname}")
 
 def _to_json_safe(obj):
+  import datetime
   import numpy as np
   if isinstance(obj, np.ndarray):
     return [_to_json_safe(i) for i in obj.tolist()]
@@ -131,5 +132,7 @@ def _to_json_safe(obj):
     return {(k.item() if isinstance(k, np.generic) else k): _to_json_safe(v) for k, v in obj.items()}
   if isinstance(obj, (list, tuple)):
     return [_to_json_safe(i) for i in obj]
+  if isinstance(obj, (datetime.datetime, datetime.date)):
+    return obj.isoformat()
   return obj
 

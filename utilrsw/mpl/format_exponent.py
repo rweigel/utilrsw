@@ -27,7 +27,7 @@ def format_exponent(x, precision=1, exclude_range=None):
     if x >= exclude_range[0] and x <= exclude_range[1]:
       return f"{x:.{precision}f}"
   base, exponent = f"{x:.{precision}e}".split("e")
-  return f"{base} \\cdot 10^{{{int(exponent)}}}"
+  return f"{base}\\cdot 10^{{{int(exponent)}}}"
 
 def format_exponent_test():
   tests = {

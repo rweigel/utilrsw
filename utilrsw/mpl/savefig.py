@@ -1,4 +1,4 @@
-def savefig(fname, fdir='', formats=None, subdirs=False):
+def savefig(fname, fdir='', formats=None, subdirs=False, bbox_inches='tight'):
 
   import os
   from matplotlib import pyplot as plt
@@ -19,7 +19,7 @@ def savefig(fname, fdir='', formats=None, subdirs=False):
       subdirs = []
 
   for format in formats:
-    kwargs = {'bbox_inches': 'tight'}
+    kwargs = {'bbox_inches': bbox_inches}
     if format == 'png':
       kwargs['dpi'] = 300
 
@@ -30,6 +30,6 @@ def savefig(fname, fdir='', formats=None, subdirs=False):
 
     os.makedirs(os.path.dirname(fname_full), exist_ok=True)
     print(f"  Writing {fname_full}")
-    plt.savefig(fname_full, bbox_inches='tight')
+    plt.savefig(fname_full, bbox_inches=bbox_inches)
 
   plt.close()
