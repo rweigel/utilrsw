@@ -55,7 +55,7 @@ def servefs(config=None):
   import urllib.parse
 
   from fastapi import FastAPI, HTTPException
-  from fastapi.responses import HTMLResponse, FileResponse, StreamingResponse, RedirectResponse
+  from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
   from fastapi.middleware.cors import CORSMiddleware
 
   import logging
@@ -71,8 +71,6 @@ def servefs(config=None):
       config = json.loads(config)
 
   root = config.get("root", ".")
-  STREAM_THRESHOLD = config.get("stream_threshold", 10 * 1024 * 1024)
-
   # Convert root to an absolute path
   root = os.path.abspath(root)
   logger.info(f"Serving files from root directory: {root}")
@@ -103,14 +101,7 @@ def servefs(config=None):
     logger.debug(f"Resolved path:  {full_path}")
 
     if full_path.is_file():
-      if full_path.stat().st_size < STREAM_THRESHOLD:
-        return FileResponse(full_path)
-      else:
-        # If the file size > STREAM_THRESHOLD, stream it
-        def iterfile(full_path):
-          with open(full_path, mode="rb") as file_like:
-            yield from file_like
-        return StreamingResponse(iterfile(full_path))
+      return FileResponse(full_path)
 
     # If the path is not a directory, send 404 error
     if not full_path.is_dir():
