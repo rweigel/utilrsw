@@ -53,8 +53,9 @@ def servefs(config=None):
   import pathlib
   import datetime
   import urllib.parse
+  from email.utils import format_datetime, parsedate_to_datetime
 
-  from fastapi import FastAPI, HTTPException
+  from fastapi import FastAPI, HTTPException, Request, Response
   from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
   from fastapi.middleware.cors import CORSMiddleware
 
@@ -85,8 +86,30 @@ def servefs(config=None):
   }
   app.add_middleware(CORSMiddleware, **kwargs)
 
+  def file_headers(full_path):
+    stat = full_path.stat()
+    last_modified = datetime.datetime.fromtimestamp(stat.st_mtime, tz=datetime.timezone.utc)
+    headers = {
+      "Content-Length": str(stat.st_size),
+      "Last-Modified": format_datetime(last_modified, usegmt=True)
+    }
+    return headers, last_modified.replace(microsecond=0)
+
+  def not_modified(request, last_modified):
+    if_modified_since = request.headers.get("if-modified-since")
+    if not if_modified_since:
+      return False
+    try:
+      ims = parsedate_to_datetime(if_modified_since)
+    except (TypeError, ValueError, IndexError, OverflowError):
+      return False
+    if ims.tzinfo is None:
+      ims = ims.replace(tzinfo=datetime.timezone.utc)
+    ims = ims.astimezone(datetime.timezone.utc).replace(microsecond=0)
+    return last_modified <= ims
+
   @app.get("{path:path}", response_class=HTMLResponse)
-  async def serve_directory_or_file(path: str = ""):
+  async def serve_directory_or_file(request: Request, path: str = ""):
     """Serve directory listing or a file."""
 
     # Note that FastAPI handles paths such as "../../" and
@@ -101,7 +124,10 @@ def servefs(config=None):
     logger.debug(f"Resolved path:  {full_path}")
 
     if full_path.is_file():
-      return FileResponse(full_path)
+      headers, last_modified = file_headers(full_path)
+      if not_modified(request, last_modified):
+        return Response(status_code=304, headers=headers)
+      return FileResponse(full_path, headers=headers)
 
     # If the path is not a directory, send 404 error
     if not full_path.is_dir():
@@ -123,18 +149,16 @@ def servefs(config=None):
     return HTMLResponse(content=_dir_listing(full_path, server_path, items))
 
   @app.head("{path:path}")
-  async def head_request(path: str = ""):
+  async def head_request(request: Request, path: str = ""):
       """Handle HEAD requests."""
       full_path = pathlib.Path(os.path.join(root, path[1:]))
 
       # Add Last-Modified header for files
       if full_path.is_file():
-        last_modified = datetime.datetime.fromtimestamp(full_path.stat().st_mtime)
-        last_modified_str = last_modified.strftime('%a, %d %b %Y %H:%M:%S GMT')
-        return FileResponse(full_path, headers={
-          "Content-Length": str(full_path.stat().st_size),
-          "Last-Modified": last_modified_str
-        })
+        headers, last_modified = file_headers(full_path)
+        if not_modified(request, last_modified):
+          return Response(status_code=304, headers=headers)
+        return FileResponse(full_path, headers=headers)
 
       # If the path is not a directory, raise a 404 error
       if not full_path.is_dir():
