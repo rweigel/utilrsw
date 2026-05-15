@@ -42,6 +42,9 @@ print_dict = print_dict.print_dict
 from . import read as read
 read = read.read
 
+from . import reorder_dict as reorder_dict
+reorder_dict = reorder_dict.reorder_dict
+
 from . import rm_path as rm_path
 rm_paths = rm_path.rm_paths
 rm_path = rm_path.rm_path
