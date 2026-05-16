@@ -16,6 +16,7 @@ from . import get_func as get_func
 get_func = get_func.get_func
 
 from .hline import hline
+hline = hline.hline
 
 from . import file_parts as file_parts
 file_parts = file_parts.file_parts
@@ -51,6 +52,12 @@ rm_path = rm_path.rm_path
 
 from . import rm_if_empty as rm_if_empty
 rm_if_empty = rm_if_empty.rm_if_empty
+
+from . import run_parallel as run_parallel
+run_parallel = run_parallel.run_parallel
+
+from . import run_serial as run_serial
+run_serial = run_serial.run_serial
 
 from . import set_path as set_path
 set_path = set_path.set_path
