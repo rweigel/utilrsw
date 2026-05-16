@@ -1,88 +1,33 @@
-# TODO: Automate.
-
 from importlib.metadata import version
+
 __version__ = version("utilrsw")
 
-from . import array_to_dict as array_to_dict
-array_to_dict = array_to_dict.array_to_dict
-
-from . import compare_dicts as compare_dicts
-compare_dicts = compare_dicts.compare_dicts
-
-from . import get_path as get_path
-get_path = get_path.get_path
-
-from . import get_func as get_func
-get_func = get_func.get_func
-
+from .array_to_dict import array_to_dict
+from .compare_dicts import compare_dicts
+from .file_parts import file_parts
+from .flatten_dicts import flatten_dicts
+from .get_func import get_func
+from .get_path import get_path
 from .hline import hline
-hline = hline.hline
-
-from . import file_parts as file_parts
-file_parts = file_parts.file_parts
-
-from . import flatten_dicts as flatten_dicts
-flatten_dicts = flatten_dicts.flatten_dicts
-
-from . import logger as logger
-logger = logger.logger
-
-from . import map_dict as map_dict
-map_dict = map_dict.map_dict
-
-from . import merge_dicts as merge_dicts
-merge_dicts = merge_dicts.merge_dicts
-
-from . import mkdir as mkdir
-mkdir = mkdir.mkdir
-
-from . import print_dict as print_dict
-format_dict = print_dict.format_dict
-print_dict = print_dict.print_dict
-
-from . import read as read
-read = read.read
-
-from . import reorder_dict as reorder_dict
-reorder_dict = reorder_dict.reorder_dict
-
-from . import rm_path as rm_path
-rm_paths = rm_path.rm_paths
-rm_path = rm_path.rm_path
-
-from . import rm_if_empty as rm_if_empty
-rm_if_empty = rm_if_empty.rm_if_empty
-
-from . import run_parallel as run_parallel
-run_parallel = run_parallel.run_parallel
-
-from . import run_serial as run_serial
-run_serial = run_serial.run_serial
-
-from . import set_path as set_path
-set_path = set_path.set_path
-
-from . import script_info as script_info
-script_info = script_info.script_info
-
-from . import servefs as servefs
-servefs = servefs.servefs
-
-from . import sort_dict as sort_dict
-sort_dict = sort_dict.sort_dict
-
-from . import timer as timer
-tick = timer.tick
-tock = timer.tock
-
-from . import trim as trim
-trim = trim.trim
-
-from . import write as write
-write = write.write
-
-from . import xprint as xprint
-xprint = xprint.xprint
+from .logger import logger
+from .map_dict import map_dict
+from .merge_dicts import merge_dicts
+from .mkdir import mkdir
+from .print_dict import format_dict, print_dict
+from .read import read
+from .reorder_dict import reorder_dict
+from .rm_if_empty import rm_if_empty
+from .rm_path import rm_path, rm_paths
+from .run_parallel import run_parallel
+from .run_serial import run_serial
+from .script_info import script_info
+from .servefs import servefs
+from .set_path import set_path
+from .sort_dict import sort_dict
+from .timer import tick, tock
+from .trim import trim
+from .write import write
+from .xprint import xprint
 
 from . import git as git
 from . import mpl as mpl
