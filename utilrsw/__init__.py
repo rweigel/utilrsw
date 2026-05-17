@@ -20,7 +20,7 @@ from .rm_if_empty import rm_if_empty
 from .rm_path import rm_path, rm_paths
 from .run_parallel import run_parallel
 from .run_serial import run_serial
-from .script_info import script_info
+from .script_info import script_dir, script_info
 from .servefs import servefs
 from .set_path import set_path
 from .sort_dict import sort_dict

@@ -1,9 +1,16 @@
-def script_info():
+def script_dir(relative=False):
+  if relative:
+    return script_info(frame_idx=2)['dir_rel']
+  else:
+    return script_info(frame_idx=2)['dir']
+
+def script_info(frame_idx=1):
   """Get information about the script that called this function.
   Returns a dictionary with the keys/value pairs of
     - name: The name of the script
     - path: The absolute path of the script
     - dir: The directory of the script
+    - dir_rel: The directory of the script relative to the current working directory
     - line: The line number where the function was called
     - function: The name of the function that called this function
     - module: The name of the module that called this function
@@ -13,7 +20,7 @@ def script_info():
   import inspect
   import datetime
 
-  frame = inspect.stack()[1]
+  frame = inspect.stack()[frame_idx]
 
   module = inspect.getmodule(frame[0])
 
@@ -45,6 +52,7 @@ def script_info():
     "name": name,
     "path": path,
     "dir": dir,
+    "dir_rel": os.path.relpath(dir, os.getcwd()) if dir else None,
     "line": frame[2],
     "function": calling_function,
     "module": parent_module,
