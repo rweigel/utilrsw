@@ -1,4 +1,5 @@
 def set_fontsize(axis=None, fontsize=16, fontParamsDefault=None):
+  """Set font size for all text in a matplotlib figure or axis."""
 
   import numpy
   if isinstance(axis, (list, tuple, numpy.ndarray)):
