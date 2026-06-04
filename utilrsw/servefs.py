@@ -23,8 +23,7 @@ def servefs(config=None):
 
       app_config = {
           "debug": True,
-          "root": ".",
-          "stream_threshold": 5 * 1024 * 1024
+          "root": "."
       }
 
       app = utilrsw.servefs(app_config)
@@ -35,7 +34,6 @@ def servefs(config=None):
 
   .. code-block:: python
 
-      import utilrsw.uvicorn
       configs = {
           "server": {
               "--host": "0.0.0.0",
@@ -44,12 +42,14 @@ def servefs(config=None):
           },
           "app": app_config
       }
+      import utilrsw.uvicorn
       utilrsw.uvicorn.run("utilrsw.servefs", configs)
 
   """
   import os
   import html
   import json
+  import http
   import stat
   import pathlib
   import datetime
@@ -61,7 +61,10 @@ def servefs(config=None):
   from fastapi.middleware.cors import CORSMiddleware
 
   import logging
-  logging.basicConfig()
+  logging.basicConfig(
+    level=logging.INFO,
+    format="%(message)s"
+  )
   logger = logging.getLogger("servefs")
   #logger.setLevel(logging.DEBUG)
 
@@ -82,6 +85,7 @@ def servefs(config=None):
     import resource
     soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
     if soft < hard:
+      hard = 1024 * 1024
       resource.setrlimit(resource.RLIMIT_NOFILE, (hard, hard))
       logger.info(f"Increased file descriptor limit from {soft} to {hard}")
   except Exception as e:
@@ -124,6 +128,29 @@ def servefs(config=None):
     ims = ims.astimezone(datetime.timezone.utc).replace(microsecond=0)
     return last_modified <= ims
 
+  def log_access(request, status_code):
+    client_host = request.client.host if request.client else "-"
+    client_port = request.client.port if request.client else "-"
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+    raw_path = request.url.path or "/"
+    if request.url.query:
+      raw_path = f"{raw_path}?{request.url.query}"
+    http_version = request.scope.get("http_version", "1.1")
+    user_agent = request.headers.get("user-agent", "-")
+    phrase = http.HTTPStatus(status_code).phrase if status_code in http.HTTPStatus._value2member_map_ else ""
+    logger.info(
+      '%s:%s %s "%s %s HTTP/%s" %d %s ua="%s"',
+      client_host,
+      client_port,
+      now,
+      request.method,
+      raw_path,
+      http_version,
+      status_code,
+      phrase,
+      user_agent
+    )
+
   @app.get("{path:path}", response_class=HTMLResponse)
   async def serve_directory_or_file(request: Request, path: str = ""):
     """Serve directory listing or a file."""
@@ -142,27 +169,37 @@ def servefs(config=None):
     if full_path.is_file():
       headers, last_modified = file_headers(full_path)
       if not_modified(request, last_modified):
-        return Response(status_code=304, headers=headers)
-      return FileResponse(full_path, headers=headers)
+        response = Response(status_code=304, headers=headers)
+        log_access(request, response.status_code)
+        return response
+      response = FileResponse(full_path, headers=headers)
+      log_access(request, response.status_code)
+      return response
 
     # If the path is not a directory, send 404 error
     if not full_path.is_dir():
-        raise HTTPException(status_code=404, detail="File or directory not found")
+      log_access(request, 404)
+      raise HTTPException(status_code=404, detail="File or directory not found")
 
     # Redirect to trailing slash for directories
     if not path.endswith('/'):
       redirect_path = path + '/'
-      return RedirectResponse(url=redirect_path, status_code=301)
+      response = RedirectResponse(url=redirect_path, status_code=301)
+      log_access(request, response.status_code)
+      return response
 
     # Generate directory listing
     try:
       items = os.listdir(full_path)
     except PermissionError:
+      log_access(request, 403)
       raise HTTPException(status_code=403, detail="Permission denied")
 
     server_path = html.escape(urllib.parse.unquote(path), quote=False)
 
-    return HTMLResponse(content=_dir_listing(full_path, server_path, items))
+    response = HTMLResponse(content=_dir_listing(full_path, server_path, items))
+    log_access(request, response.status_code)
+    return response
 
   @app.head("{path:path}")
   async def head_request(request: Request, path: str = ""):
@@ -173,15 +210,22 @@ def servefs(config=None):
       if full_path.is_file():
         headers, last_modified = file_headers(full_path)
         if not_modified(request, last_modified):
-          return Response(status_code=304, headers=headers)
-        return FileResponse(full_path, headers=headers)
+          response = Response(status_code=304, headers=headers)
+          log_access(request, response.status_code)
+          return response
+        response = FileResponse(full_path, headers=headers)
+        log_access(request, response.status_code)
+        return response
 
       # If the path is not a directory, raise a 404 error
       if not full_path.is_dir():
+        log_access(request, 404)
         raise HTTPException(status_code=404, detail="File or directory not found")
 
       # For directories, return a generic response with no body
-      return HTMLResponse(content="", headers={"Content-Type": "text/html"})
+      response = HTMLResponse(content="", headers={"Content-Type": "text/html"})
+      log_access(request, response.status_code)
+      return response
 
   DIR_LISTING = _DIR_LISTING.replace("\n  ", "\n")[1:]
 
