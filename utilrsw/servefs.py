@@ -50,6 +50,7 @@ def servefs(config=None):
   import os
   import html
   import json
+  import stat
   import pathlib
   import datetime
   import urllib.parse
@@ -75,6 +76,16 @@ def servefs(config=None):
   # Convert root to an absolute path
   root = os.path.abspath(root)
   logger.info(f"Serving files from root directory: {root}")
+  
+  # Increase file descriptor limit if possible
+  try:
+    import resource
+    soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+    if soft < hard:
+      resource.setrlimit(resource.RLIMIT_NOFILE, (hard, hard))
+      logger.info(f"Increased file descriptor limit from {soft} to {hard}")
+  except Exception as e:
+    logger.debug(f"Could not increase file descriptor limit: {e}")
 
   app = FastAPI()
 
@@ -85,6 +96,11 @@ def servefs(config=None):
     "allow_headers": ["Content-Type"]
   }
   app.add_middleware(CORSMiddleware, **kwargs)
+
+  @app.exception_handler(Exception)
+  async def global_exception_handler(request, exc):
+    logger.error(f"Unhandled exception: {exc}")
+    return Response(status_code=500, content="Internal server error")
 
   def file_headers(full_path):
     stat = full_path.stat()
@@ -176,19 +192,29 @@ def servefs(config=None):
 
     for name in items:
         fullname = pathlib.Path(full_path / name)
-        size = fullname.stat().st_size
+        try:
+            # Call stat() once and reuse the result to minimize file descriptor usage
+            stat_result = fullname.stat()
+            size = stat_result.st_size
+            mtime = stat_result.st_mtime
+            is_dir = stat.S_ISDIR(stat_result.st_mode)
+            is_symlink = fullname.is_symlink()
+        except (OSError, PermissionError):
+            # Skip files that can't be accessed
+            continue
+
         displayname = linkname = name
 
         # Append / for directories or @ for symbolic links
-        if fullname.is_dir():
+        if is_dir:
             displayname = name + "/"
             linkname = name + "/"
-        if fullname.is_symlink():
+        if is_symlink:
             displayname = name + "@"
 
         href = urllib.parse.quote(linkname, errors="surrogatepass")
         text = html.escape(displayname, quote=False)
-        modified = datetime.datetime.fromtimestamp(fullname.stat().st_mtime, tz=datetime.timezone.utc)
+        modified = datetime.datetime.fromtimestamp(mtime, tz=datetime.timezone.utc)
         modified = modified.strftime('%Y-%m-%dT%H:%M:%SZ')
         a = f'<a href="{href}">{text}</a>'
         rows.append(f'      <tr><td>{a}</td><td>{size}</td><td>{modified}</td></tr>')
