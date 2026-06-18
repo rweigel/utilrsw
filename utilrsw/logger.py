@@ -114,6 +114,58 @@ def logger(name=None,
       """Only show log messages with log level below ERROR."""
       return record.levelno < logging.ERROR
 
+  class IncludeErrorsFilter(logging.Filter):
+    def filter(self, record):
+      """Only show log messages with log level ERROR or higher."""
+      return record.levelno >= logging.ERROR
+
+
+  def logger_name():
+    if debug_logger:
+      print("No logger name provided, using sys.argv[0] and inspect.stack() to determine name.")
+      for idx, frame in enumerate(inspect.stack()):
+        print(f"  Frame {idx}: {frame.frame}")
+
+    import pathlib
+    script = (sys.argv[0] if sys.argv else '') or ''
+    script_name = pathlib.Path(script).name
+
+    if script_name and script_name not in ('-c', '-m'):
+      return script_name
+
+    frame = inspect.stack()[1]
+    module = inspect.getmodule(frame[0])
+    if module and hasattr(module, '__file__'):
+      name = os.path.splitext(os.path.basename(module.__file__))[0]
+    else:
+      name = '__main__'
+
+    return name
+
+  def _setLevel(self, level):
+    # Accept either numeric or string levels (e.g., 10 or "DEBUG").
+    level_no = logging._checkLevel(level)
+    for handler in self.handlers:
+      # Keep error-only handlers pinned at ERROR so .errors.log and stderr
+      # never receive INFO/DEBUG records when lowering logger level.
+      is_error_file = False
+      if file_error and isinstance(handler, logging.FileHandler):
+        try:
+          is_error_file = os.path.abspath(handler.baseFilename) == os.path.abspath(file_error)
+        except Exception:
+          is_error_file = False
+
+      is_stderr_stream = (
+        isinstance(handler, logging.StreamHandler)
+        and not isinstance(handler, logging.FileHandler)
+        and getattr(handler, 'stream', None) is sys.stderr
+      )
+
+      if is_error_file or is_stderr_stream:
+        handler.setLevel(logging.ERROR)
+      else:
+        handler.setLevel(level_no)
+
   log_level = log_level.upper()
   if console_level is None:
     console_level = log_level
@@ -124,16 +176,7 @@ def logger(name=None,
     logging.Formatter.converter = time.gmtime
 
   if name is None:
-    if debug_logger:
-      print("No logger name provided, using inspect.stack() to determine name.")
-      for idx, frame in enumerate(inspect.stack()):
-        print(f"  Frame {idx}: {frame.frame}")
-    frame = inspect.stack()[1]
-    module = inspect.getmodule(frame[0])
-    if module and hasattr(module, '__file__'):
-      name = os.path.splitext(os.path.basename(module.__file__))[0]
-    else:
-      name = '__main__'
+    name = logger_name()
 
   if file_log is None:
     file_log = name + ".log"
@@ -175,6 +218,9 @@ def logger(name=None,
       'filters': {
           'exclude_errors': {
               '()': ExcludeErrorsFilter
+          },
+          'include_errors': {
+            '()': IncludeErrorsFilter
           }
       },
       'formatters': {
@@ -195,6 +241,7 @@ def logger(name=None,
               'class': 'logging.StreamHandler',
               'level': 'ERROR',
               'formatter': 'console_formatter',
+              'filters': ['include_errors'],
               'stream': sys.stderr
           },
           'file_stderr': {
@@ -202,6 +249,7 @@ def logger(name=None,
               'class': 'logging.FileHandler',
               'level': 'ERROR',
               'formatter': 'file_formatter',
+              'filters': ['include_errors'],
               'filename': file_error,
               'encoding': 'utf8'
           },
@@ -281,4 +329,10 @@ def logger(name=None,
 
     atexit.register(_cleanup_empty_logs)
 
-  return logging.getLogger(name)
+
+  import types
+  if getattr(_logger, '_utilrsw_setlevel_wrapped', False) is False:
+    _logger.setLevel = types.MethodType(_setLevel, _logger)
+    _logger._utilrsw_setlevel_wrapped = True
+
+  return _logger

@@ -1,3 +1,3 @@
-2026-02-14T17:19:33Z INFO  logger_demo "logger3 info message"
-2026-02-14T17:19:33Z ERROR logger_demo "logger3 error message"
-2026-02-14T17:19:33Z DEBUG logger_demo "logger3 debug message"
+2026-06-17T09:26:48Z INFO  logger_demo.py "logger3 info message"
+2026-06-17T09:26:48Z ERROR logger_demo.py "logger3 error message"
+2026-06-17T09:26:48Z DEBUG logger_demo.py "logger3 debug message"

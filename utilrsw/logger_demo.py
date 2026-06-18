@@ -14,7 +14,15 @@ config0 = {
 logger0 = logger(**config0)
 logger0.error('"logger0 error message"')
 logger0.info('"logger0 info message"')
-print('Wrote logger.log and logger.errors.log')
+
+logger0.setLevel('ERROR')
+logger0.info('logger0 info message not shown')
+
+logger0.disabled = True
+logger0.error('"logger0 error message not shown"')
+if not debug_logger:
+  print('Wrote logger.log and logger.errors.log')
+
 
 config1 = {
   'name': 'logger1',
@@ -28,10 +36,12 @@ config1 = {
 logger1 = logger(**config1)
 logger1.info('"logger1 info message"')
 logger1.error('"logger1 error message"')
-print('Wrote logger1.log and logger1.errors.log')
+if not debug_logger:
+  print('Wrote logger_demo1.log and logger_demo1.errors.log')
 
 if debug_logger:
   print('\n')
+
 
 config2 = {
   'name': 'logger2',
@@ -50,7 +60,9 @@ logger2 = logger(**config2)
 logger2.info('"logger2 info message"')
 logger2.error('"logger2 error message"')
 logger2.debug('"logger2 debug message"')
-print('Wrote logger2.log and logger2.errors.log')
+if not debug_logger:
+  print('Wrote logger_demo2.log and logger_demo2.errors.log')
+
 
 config3 = {
   'log_level': 'DEBUG',
@@ -68,4 +80,5 @@ logger3 = logger(**config3)
 logger3.info('"logger3 info message"')
 logger3.error('"logger3 error message"')
 logger3.debug('"logger3 debug message"')
-print('Wrote logger3.log and logger3.errors.log')
+if not debug_logger:
+  print('Wrote logger_demo3.log and logger_demo3.errors.log')
