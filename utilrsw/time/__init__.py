@@ -7,6 +7,9 @@ isoduration_to_timedelta = isoduration_to_timedelta.isoduration_to_timedelta
 from . import ints2doy as ints2doy
 ints2doy = ints2doy.ints2doy
 
+from . import date_range as date_range
+date_range = date_range.date_range
+
 from . import doy2md as doy2md
 doy2md = doy2md.doy2md
 
