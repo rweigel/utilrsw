@@ -6,6 +6,7 @@ import inspect
 import datetime
 import logging
 import logging.config
+import traceback
 
 def logger(name=None,
            log_level='INFO',
@@ -131,6 +132,8 @@ def logger(name=None,
     script_name = pathlib.Path(script).name
 
     if script_name and script_name not in ('-c', '-m'):
+      if script_name.endswith('.py'):
+        script_name = script_name[:-3]
       return script_name
 
     frame = inspect.stack()[1]
@@ -181,32 +184,36 @@ def logger(name=None,
   if file_log is None:
     file_log = name + ".log"
 
+  file_exception = name + ".exception.log"
+
   if file_error is None:
     base, ext = os.path.splitext(file_log)
     file_error = base + f".errors.{ext.lstrip('.')}"
 
   if not os.path.isabs(file_log) and log_dir is not None:
     file_log = os.path.join(log_dir, file_log)
+  if not os.path.isabs(file_exception) and log_dir is not None:
+    file_exception = os.path.join(log_dir, file_exception)
   if file_error and not os.path.isabs(file_error) and log_dir is not None:
     file_error = os.path.join(log_dir, file_error)
 
   if rm_existing:
     if os.path.exists(file_log):
       os.remove(file_log)
+    if os.path.exists(file_exception):
+      os.remove(file_exception)
     if file_error and os.path.exists(file_error):
       os.remove(file_error)
 
   from . import mkdir as mkdir
   if file_log:
     mkdir(os.path.dirname(file_log))
+  if file_exception:
+    mkdir(os.path.dirname(file_exception))
   if file_error:
     mkdir(os.path.dirname(file_error))
 
-  handlers = [
-            'console_stderr',
-            'console_stdout',
-            'file_stdout'
-          ]
+  handlers = ['console_stderr', 'console_stdout', 'file_stdout']
 
   if file_error is not False:
     handlers.append('file_stderr')
@@ -322,10 +329,11 @@ def logger(name=None,
           print(f"Removing empty log file: {path}")
         os.remove(path)
 
-    def _cleanup_empty_logs(file_log=file_log, file_error=file_error):
+    def _cleanup_empty_logs(file_log=file_log, file_error=file_error, file_exception=file_exception):
       logging.shutdown()
       _rm_if_empty(file_log)
       _rm_if_empty(file_error)
+      _rm_if_empty(file_exception)
 
     atexit.register(_cleanup_empty_logs)
 
@@ -334,5 +342,48 @@ def logger(name=None,
   if getattr(_logger, '_utilrsw_setlevel_wrapped', False) is False:
     _logger.setLevel = types.MethodType(_setLevel, _logger)
     _logger._utilrsw_setlevel_wrapped = True
+
+  def _append_uncaught_exception(exc_type, exc_value, exc_traceback):
+    if exc_type is KeyboardInterrupt:
+      return
+
+    ts = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+    lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
+    with open(file_exception, 'a', encoding='utf8') as f:
+      f.write(f"[{ts}] Uncaught exception\n")
+      f.writelines(lines)
+      if not lines[-1].endswith('\n'):
+        f.write('\n')
+      f.write('\n')
+
+  _previous_excepthook = sys.excepthook
+
+  def _utilrsw_excepthook(exc_type, exc_value, exc_traceback):
+    _append_uncaught_exception(exc_type, exc_value, exc_traceback)
+    _previous_excepthook(exc_type, exc_value, exc_traceback)
+
+  sys.excepthook = _utilrsw_excepthook
+
+  if hasattr(sys, 'unraisablehook'):
+    _previous_unraisablehook = sys.unraisablehook
+
+    def _utilrsw_unraisablehook(unraisable):
+      _append_uncaught_exception(type(unraisable.exc_value), unraisable.exc_value, unraisable.exc_traceback)
+      _previous_unraisablehook(unraisable)
+
+    sys.unraisablehook = _utilrsw_unraisablehook
+
+  try:
+    import threading
+    if hasattr(threading, 'excepthook'):
+      _previous_thread_excepthook = threading.excepthook
+
+      def _utilrsw_thread_excepthook(args):
+        _append_uncaught_exception(args.exc_type, args.exc_value, args.exc_traceback)
+        _previous_thread_excepthook(args)
+
+      threading.excepthook = _utilrsw_thread_excepthook
+  except Exception:
+    pass
 
   return _logger

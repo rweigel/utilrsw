@@ -82,3 +82,28 @@ logger3.error('"logger3 error message"')
 logger3.debug('"logger3 debug message"')
 if not debug_logger:
   print('Wrote logger_demo3.log and logger_demo3.errors.log')
+
+
+# Reset exception hooks so the final uncaught-exception demo uses only logger4.
+import sys
+import threading
+sys.excepthook = sys.__excepthook__
+if hasattr(sys, '__unraisablehook__'):
+  sys.unraisablehook = sys.__unraisablehook__
+if hasattr(threading, '__excepthook__'):
+  threading.excepthook = threading.__excepthook__
+
+
+config4 = {
+  'name': 'logger4',
+  'file_log': os.path.join(log_dir, 'logger_demo4.log'),
+  'file_error': os.path.join(log_dir, 'logger_demo4.errors.log'),
+  'log_dir': log_dir,
+  'color': True,
+  'debug_logger': debug_logger
+}
+logger4 = logger(**config4)
+logger4.info('About to raise an uncaught exception. Check logger_demo/logger4.exception.log')
+
+# Intentional uncaught exception demo. This should be written to logger_demo/logger4.exception.log.
+raise RuntimeError('Intentional uncaught exception from logger_demo.py')
