@@ -1,4 +1,4 @@
-[2026-06-20T16:40:25.343670Z] Uncaught exception
+[2026-06-27T22:06:21.345853Z] Uncaught exception
 Traceback (most recent call last):
   File "/Users/rweigel/git/utilrsw/utilrsw/logger_demo.py", line 109, in <module>
     raise RuntimeError('Intentional uncaught exception from logger_demo.py')

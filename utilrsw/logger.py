@@ -4,9 +4,11 @@ import time
 import atexit
 import inspect
 import datetime
+import traceback
+
 import logging
 import logging.config
-import traceback
+
 
 def logger(name=None,
            log_level='INFO',
@@ -16,7 +18,8 @@ def logger(name=None,
            file_format=u"%(asctime)s %(levelname)s %(name)s %(message)s",
            file_level=None,
            file_log=None,
-           file_error=None, # If None, derived from file_log. If False, no error log file.
+           file_error=None,
+           file_exception=None,
            datefmt="%Y-%m-%dT%H:%M:%S.%f",
            utc_timestamps=True,
            rm_existing=True,
@@ -25,10 +28,62 @@ def logger(name=None,
            color=None,
            disable_existing_loggers=False,
            debug_logger=False):
+  """Create and return a configured logging.Logger instance.
+
+  Parameters
+  ----------
+  name : str, optional
+      Logger name. Defaults to the calling module's ``__name__``.
+  log_level : str
+      Root log level (e.g. ``'DEBUG'``, ``'INFO'``). Default ``'INFO'``.
+  log_dir : str, optional
+      Directory for log files. No file logging when ``None``.
+
+  console_format : str
+      Format string for console (stderr) output.
+  console_level : str, optional
+      Console handler level. Defaults to ``log_level``.
+  color : bool, optional
+      Colorize console output. Auto-detected when ``None``.
+
+  file_format : str
+      Format string for file output.
+  file_level : str, optional
+      File handler level. Defaults to ``log_level``.
+  file_log : str, optional
+      Path to the main log file. Derived from ``name`` when ``None``.
+  file_error : str or False, optional
+      Path to the error log file. Derived from ``file_log`` when ``None``.
+      Pass ``False`` to suppress the error log file.
+  file_exception : str, optional
+      Path to the exception log file. Derived from ``name`` when ``None``.
+
+  datefmt : str
+      ``strftime`` format for timestamps.
+  utc_timestamps : bool
+      Use UTC timestamps. Default ``True``.
+
+  rm_existing : bool
+      Remove existing log files on startup. Default ``True``.
+  rm_empty : bool
+      Remove empty log files on exit. Default ``True``.
+  rm_string : str
+      String stripped from status messages.
+
+  disable_existing_loggers : bool
+      Passed to ``logging.config.dictConfig``. Default ``False``.
+  debug_logger : bool
+      Log internal logger setup details. Default ``False``.
+
+  Returns
+  -------
+  logging.Logger
+  """
 
   if debug_logger:
     frame = inspect.currentframe()
     kwargs = frame.f_locals
+
 
   class CustomFormatter(logging.Formatter):
     converter = datetime.datetime.fromtimestamp
@@ -110,10 +165,12 @@ def logger(name=None,
         return '\033[95m' + self.pad_levelname(levelname) + '\033[0m'
       return levelname
 
+
   class ExcludeErrorsFilter(logging.Filter):
     def filter(self, record):
       """Only show log messages with log level below ERROR."""
       return record.levelno < logging.ERROR
+
 
   class IncludeErrorsFilter(logging.Filter):
     def filter(self, record):
@@ -123,7 +180,9 @@ def logger(name=None,
 
   def logger_name():
     if debug_logger:
-      print("No logger name provided, using sys.argv[0] and inspect.stack() to determine name.")
+      msg = "No logger name provided, using sys.argv[0] and inspect.stack() "
+      msg += "to determine name."
+      print()
       for idx, frame in enumerate(inspect.stack()):
         print(f"  Frame {idx}: {frame.frame}")
 
@@ -145,7 +204,8 @@ def logger(name=None,
 
     return name
 
-  def _setLevel(self, level):
+
+  def setLevel(self, level):
     # Accept either numeric or string levels (e.g., 10 or "DEBUG").
     level_no = logging._checkLevel(level)
     for handler in self.handlers:
@@ -154,7 +214,9 @@ def logger(name=None,
       is_error_file = False
       if file_error and isinstance(handler, logging.FileHandler):
         try:
-          is_error_file = os.path.abspath(handler.baseFilename) == os.path.abspath(file_error)
+          a = os.path.abspath(handler.baseFilename)
+          b = os.path.abspath(file_error)
+          is_error_file = a == b
         except Exception:
           is_error_file = False
 
@@ -168,6 +230,21 @@ def logger(name=None,
         handler.setLevel(logging.ERROR)
       else:
         handler.setLevel(level_no)
+
+
+  def cleanup(file_log=file_log, file_error=file_error, file_exception=file_exception):
+    def _rm_if_empty(path):
+      if not path:
+        return
+      if os.path.exists(path) and os.path.getsize(path) == 0:
+        if debug_logger:
+          print(f"Removing empty log file: {path}")
+        os.remove(path)
+    logging.shutdown()
+    _rm_if_empty(file_log)
+    _rm_if_empty(file_error)
+    _rm_if_empty(file_exception)
+
 
   log_level = log_level.upper()
   if console_level is None:
@@ -184,7 +261,9 @@ def logger(name=None,
   if file_log is None:
     file_log = name + ".log"
 
-  file_exception = name + ".exception.log"
+  if file_exception is None:
+    base, ext = os.path.splitext(file_log)
+    file_exception = base + f".exceptions{ext}"
 
   if file_error is None:
     base, ext = os.path.splitext(file_log)
@@ -205,6 +284,7 @@ def logger(name=None,
     if file_error and os.path.exists(file_error):
       os.remove(file_error)
 
+
   from . import mkdir as mkdir
   if file_log:
     mkdir(os.path.dirname(file_log))
@@ -212,6 +292,7 @@ def logger(name=None,
     mkdir(os.path.dirname(file_exception))
   if file_error:
     mkdir(os.path.dirname(file_error))
+
 
   handlers = ['console_stderr', 'console_stdout', 'file_stdout']
 
@@ -286,13 +367,14 @@ def logger(name=None,
       },
       'xroot': {
           # Docs say:
-          #   In general, this should be kept at 'NOTSET'.
-          #   Otherwise it would interfere with the log levels set for each handler.
+          #   In general, this should be kept at 'NOTSET'. Otherwise
+          #   it would interfere with the log levels set for each handler.
           # However, this leads to duplicate log messages.
           'level': 'NOTSET',
           'handlers': handlers
       }
   }
+
 
   if debug_logger:
     print(f"Initializing logger with name='{name}'")
@@ -302,52 +384,43 @@ def logger(name=None,
         continue
       print(f"    {key}: {value}")
 
-    print(f'  Logging output to: {file_log}')
+    print(f'  Logging output to:     {file_log}')
+    print(f'  Logging exceptions to: {file_exception}')
 
   if file_error:
     if debug_logger:
-      print(f'  Logging errors to: {file_error}')
+      print(f'  Logging errors to:     {file_error}')
   else:
     del config['handlers']['file_stderr']
-
 
   logging.config.dictConfig(config)
 
   _logger = logging.getLogger(name)
   for handler in _logger.handlers:
+    _fmt = handler.formatter._fmt
     if handler.name.startswith('console'):
-      handler.setFormatter(CustomFormatter(fmt=handler.formatter._fmt, color=color, name=handler.name))
+      cf = CustomFormatter(fmt=_fmt, color=color, name=handler.name)
+      handler.setFormatter(cf)
     else:
-      handler.setFormatter(CustomFormatter(fmt=handler.formatter._fmt, color=False, name=handler.name))
+      cf = CustomFormatter(fmt=_fmt, color=False, name=handler.name)
+      handler.setFormatter(cf)
 
   if rm_empty:
-    def _rm_if_empty(path):
-      if not path:
-        return
-      if os.path.exists(path) and os.path.getsize(path) == 0:
-        if debug_logger:
-          print(f"Removing empty log file: {path}")
-        os.remove(path)
-
-    def _cleanup_empty_logs(file_log=file_log, file_error=file_error, file_exception=file_exception):
-      logging.shutdown()
-      _rm_if_empty(file_log)
-      _rm_if_empty(file_error)
-      _rm_if_empty(file_exception)
-
-    atexit.register(_cleanup_empty_logs)
+    atexit.register(cleanup)
 
 
   import types
   if getattr(_logger, '_utilrsw_setlevel_wrapped', False) is False:
-    _logger.setLevel = types.MethodType(_setLevel, _logger)
+    _logger.setLevel = types.MethodType(setLevel, _logger)
     _logger._utilrsw_setlevel_wrapped = True
 
-  def _append_uncaught_exception(exc_type, exc_value, exc_traceback):
+
+  def append_uncaught_exception(exc_type, exc_value, exc_traceback):
     if exc_type is KeyboardInterrupt:
       return
 
-    ts = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+    tf = '%Y-%m-%dT%H:%M:%S.%fZ'
+    ts = datetime.datetime.now(datetime.timezone.utc).strftime(tf)
     lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
     with open(file_exception, 'a', encoding='utf8') as f:
       f.write(f"[{ts}] Uncaught exception\n")
@@ -355,34 +428,33 @@ def logger(name=None,
       if not lines[-1].endswith('\n'):
         f.write('\n')
       f.write('\n')
+      if debug_logger:
+        print(f' Wrote: {file_exception}')
 
-  _previous_excepthook = sys.excepthook
-
-  def _utilrsw_excepthook(exc_type, exc_value, exc_traceback):
-    _append_uncaught_exception(exc_type, exc_value, exc_traceback)
-    _previous_excepthook(exc_type, exc_value, exc_traceback)
-
-  sys.excepthook = _utilrsw_excepthook
+  previous_excepthook = sys.excepthook
+  def utilrsw_excepthook(exc_type, exc_value, exc_traceback):
+    append_uncaught_exception(exc_type, exc_value, exc_traceback)
+    previous_excepthook(exc_type, exc_value, exc_traceback)
+  sys.excepthook = utilrsw_excepthook
 
   if hasattr(sys, 'unraisablehook'):
-    _previous_unraisablehook = sys.unraisablehook
-
-    def _utilrsw_unraisablehook(unraisable):
-      _append_uncaught_exception(type(unraisable.exc_value), unraisable.exc_value, unraisable.exc_traceback)
-      _previous_unraisablehook(unraisable)
-
-    sys.unraisablehook = _utilrsw_unraisablehook
+    previous_unraisablehook = sys.unraisablehook
+    def utilrsw_unraisablehook(unraisable):
+      args = [type(unraisable.exc_value),
+              unraisable.exc_value,
+              unraisable.exc_traceback]
+      append_uncaught_exception(*args)
+      previous_unraisablehook(unraisable)
+    sys.unraisablehook = utilrsw_unraisablehook
 
   try:
     import threading
     if hasattr(threading, 'excepthook'):
-      _previous_thread_excepthook = threading.excepthook
-
-      def _utilrsw_thread_excepthook(args):
-        _append_uncaught_exception(args.exc_type, args.exc_value, args.exc_traceback)
-        _previous_thread_excepthook(args)
-
-      threading.excepthook = _utilrsw_thread_excepthook
+      previous_thread_excepthook = threading.excepthook
+      def utilrsw_thread_excepthook(args):
+        append_uncaught_exception(args.exc_type, args.exc_value, args.exc_traceback)
+        previous_thread_excepthook(args)
+      threading.excepthook = utilrsw_thread_excepthook
   except Exception:
     pass
 
