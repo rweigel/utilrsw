@@ -39,11 +39,11 @@ def cli(defaults=None, parser=None):
 
   return {
     "host": {
-      "help": f"Serve table as a web page at http://host:port. Default: {defaults['host']}",
+      "help": f"Serve http://host:port. Default: {defaults['host']}",
       "default": defaults['host']
     },
     "port": {
-      "help": f"Serve table as a web page at http://host:port. Default: {defaults['port']}",
+      "help": f"Serve http://host:port. Default: {defaults['port']}",
       "type": int,
       "default": defaults['port']
     },
