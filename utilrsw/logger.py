@@ -232,20 +232,6 @@ def logger(name=None,
         handler.setLevel(level_no)
 
 
-  def cleanup(file_log=file_log, file_error=file_error, file_exception=file_exception):
-    def _rm_if_empty(path):
-      if not path:
-        return
-      if os.path.exists(path) and os.path.getsize(path) == 0:
-        if debug_logger:
-          print(f"Removing empty log file: {path}")
-        os.remove(path)
-    logging.shutdown()
-    _rm_if_empty(file_log)
-    _rm_if_empty(file_error)
-    _rm_if_empty(file_exception)
-
-
   log_level = log_level.upper()
   if console_level is None:
     console_level = log_level
@@ -276,14 +262,38 @@ def logger(name=None,
   if file_error and not os.path.isabs(file_error) and log_dir is not None:
     file_error = os.path.join(log_dir, file_error)
 
-  if rm_existing:
-    if os.path.exists(file_log):
-      os.remove(file_log)
-    if os.path.exists(file_exception):
-      os.remove(file_exception)
-    if file_error and os.path.exists(file_error):
-      os.remove(file_error)
+  def _remove_or_truncate(path):
+    """Remove a log file, or truncate it on Windows if the file is locked."""
+    if not os.path.exists(path):
+      return
+    try:
+      os.remove(path)
+    except PermissionError:
+      # Windows: file is locked by another process; truncate instead.
+      try:
+        open(path, 'w').close()
+      except PermissionError:
+        pass
 
+  if rm_existing:
+    _remove_or_truncate(file_log)
+    _remove_or_truncate(file_exception)
+    if file_error:
+      _remove_or_truncate(file_error)
+
+
+  def cleanup(file_log=file_log, file_error=file_error, file_exception=file_exception):
+    def _rm_if_empty(path):
+      if not path:
+        return
+      if os.path.exists(path) and os.path.getsize(path) == 0:
+        if debug_logger:
+          print(f"Removing empty log file: {path}")
+        os.remove(path)
+    logging.shutdown()
+    _rm_if_empty(file_log)
+    _rm_if_empty(file_error)
+    _rm_if_empty(file_exception)
 
   from . import mkdir as mkdir
   if file_log:

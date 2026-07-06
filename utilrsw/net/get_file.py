@@ -140,6 +140,7 @@ def get_conditional(url, file=None, gzip=False, stream=False, progress=False, lo
   content = None
 
   file_tmp = file + "." + secrets.token_hex(4) + ".tmp"
+  os.makedirs(os.path.dirname(os.path.abspath(file)), exist_ok=True)
   emsg = None
   if response.status_code == 200:
 
