@@ -1,2 +1,3 @@
-2026-06-27T18:06:21.343183Z INFO  logger1 "logger1 info message"
-2026-06-27T18:06:21.343230Z ERROR logger1 "logger1 error message"
+2026-07-08T20:57:39.680602Z INFO  logger1 "logger1 info message"
+2026-07-08T20:57:39.680643Z ERROR logger1 "logger1 error message"
+2026-07-08T20:57:39.690741Z INFO  logger1 Log file '/Users/rweigel/git/utilrsw/utilrsw/logger_demo/logger_demo1.log' size: 131 bytes

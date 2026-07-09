@@ -9,6 +9,8 @@ import traceback
 import logging
 import logging.config
 
+_registered_cleanups = set()
+
 
 def logger(name=None,
            log_level='INFO',
@@ -281,19 +283,26 @@ def logger(name=None,
     if file_error:
       _remove_or_truncate(file_error)
 
-
   def cleanup(file_log=file_log, file_error=file_error, file_exception=file_exception):
     def _rm_if_empty(path):
       if not path:
         return
       if os.path.exists(path) and os.path.getsize(path) == 0:
-        if debug_logger:
-          print(f"Removing empty log file: {path}")
+        _logger.debug(f"Removing empty log file: {path}")
         os.remove(path)
-    logging.shutdown()
+
+    for file in [file_log, file_error, file_exception]:
+      if file and os.path.exists(file) and os.path.getsize(file) == 0:
+        _logger.debug(f"Removing empty log file: {file}")
+        os.remove(file)
+      if file and os.path.exists(file) and os.path.getsize(file) > 0:
+        _logger.info(f"Wrote file '{file}' ({os.path.getsize(file)} bytes)")
+
     _rm_if_empty(file_log)
     _rm_if_empty(file_error)
     _rm_if_empty(file_exception)
+
+    logging.shutdown()
 
   from . import mkdir as mkdir
   if file_log:
@@ -416,7 +425,10 @@ def logger(name=None,
       handler.setFormatter(cf)
 
   if rm_empty:
-    atexit.register(cleanup)
+    _cleanup_key = (file_log, file_error, file_exception)
+    if _cleanup_key not in _registered_cleanups:
+      _registered_cleanups.add(_cleanup_key)
+      atexit.register(cleanup)
 
 
   import types

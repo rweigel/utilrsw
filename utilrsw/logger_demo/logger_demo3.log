@@ -1,3 +1,7 @@
-2026-06-27T18:06:21Z INFO  logger_demo "logger3 info message"
-2026-06-27T18:06:21Z ERROR logger_demo "logger3 error message"
-2026-06-27T18:06:21Z DEBUG logger_demo "logger3 debug message"
+2026-07-08T20:57:39Z INFO  logger_demo "logger3 info message"
+2026-07-08T20:57:39Z ERROR logger_demo "logger3 error message"
+2026-07-08T20:57:39Z DEBUG logger_demo "logger3 debug message"
+2026-07-08T20:57:39Z INFO  logger_demo Log file 'logger_demo3.log' size: 188 bytes
+2026-07-08T20:57:39Z DEBUG logger_demo Error log file 'logger_demo3.errors.log' size: 63 bytes
+2026-07-08T20:57:39Z INFO  logger_demo Log file 'logger_demo.log' size: 139 bytes
+2026-07-08T20:57:39Z DEBUG logger_demo Error log file 'logger_demo.errors.log' size: 70 bytes
