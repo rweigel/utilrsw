@@ -10,6 +10,6 @@ def clone(repo_dir, repo_url, rebase=True, logger=None, logger_indent=''):
 
   if not os.path.exists(repo_dir):
     # git clone <repo_url>
-    xprint(f"{logger_indent}Cloning {repo_url} into {repo_dir}")
+    xprint(f"{logger_indent}Cloning with rebase={rebase} {repo_url} into {repo_dir}")
     Repo.clone_from(repo_url, repo_dir)
     return
