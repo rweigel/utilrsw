@@ -1,13 +1,52 @@
-def write(fname, data, logger=None):
+from importlib.resources import path
+
+
+def write_atomic(path, data):
+
+  import os
+  import json
+  import pickle
+  import warnings
+
+  import numpy
+
+
+def write(fname, data, atomic=False, logger=None):
 
   import os
   import csv
   import json
   import pickle
+  import secrets
 
   import utilrsw
 
   utilrsw.mkdir(os.path.dirname(fname), logger=logger)
+
+  if atomic:
+    _base, _ext = os.path.splitext(fname)
+    fname_tmp = f"{_base}.{secrets.token_hex(3)}.tmp{_ext}"
+    # filename.json -> filename.abcdef.tmp.json
+    try:
+      write(fname_tmp, data, logger=logger)
+      if logger is not None:
+        logger.info(f"Renaming {fname_tmp} to {fname}")
+      try:
+        os.replace(fname_tmp, fname)
+      except PermissionError:
+        # On Windows, os.replace() raises PermissionError if the destination
+        # file is open by another process.
+        if logger is not None:
+          msg = f"atomic write failed. File '{fname}' is open by another process. "
+          msg += f"Removing temp file: '{fname_tmp}'."
+          logger.error(msg)
+        raise
+    except Exception as e:
+      if os.path.exists(fname_tmp):
+        os.remove(fname_tmp)
+      raise e
+    return
+
 
   if logger is not None:
     logger.info(f"Writing {fname}")

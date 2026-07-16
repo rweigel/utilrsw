@@ -8,8 +8,6 @@ def push(repo_dir, repo_url, msg="", logger=None, logger_indent=''):
     else:
       print(f"{logger_indent}{msg}")
 
-  # git -C servers commit -a -m <msg>
-  # git  -C servers push
 
   if not os.path.isdir(os.path.join(repo_dir, '.git')):
     emsg = f"{repo_dir} does not exist or is not a git repository."
