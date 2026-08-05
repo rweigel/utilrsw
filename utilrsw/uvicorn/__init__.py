@@ -66,9 +66,10 @@ def run(app_function, configs):
   config_server = configs.get('server', None)
   config_app = configs.get('app', {})
 
-  app_debug = config_app.get("debug", False)
-  if app_debug:
-    logger.setLevel(logging.DEBUG)
+  if isinstance(app_function, dict):
+    app_debug = config_app.get("debug", False)
+    if app_debug:
+      logger.setLevel(logging.DEBUG)
 
   app = utilrsw.get_func(app_function)
   if config_server is not None:
@@ -136,6 +137,10 @@ def factory(**args):
     config_data = f.read()
     config_dict = json.loads(config_data)
 
+  log_level = config_dict.get('log_level')
+  if log_level is not None:
+    import logging
+    logging.getLogger('hapiserver').setLevel(int(log_level))
   app_debug = config_dict.get("debug", False)
   if app_debug:
     logger.setLevel(logging.DEBUG)
@@ -152,6 +157,8 @@ def start(app_function, configs, wait=None):
   """Start the server in a background process."""
   import atexit
   import multiprocessing
+
+  _wait_port_free(configs)
 
   logger.info("Starting server in background process")
   kwargs = {
@@ -171,18 +178,42 @@ def start(app_function, configs, wait=None):
   return process
 
 
+def _wait_port_free(configs, retries=20, delay=0.5):
+  import socket
+  import time
+
+  config_server = configs.get('server', {})
+  host = config_server.get('--host', '0.0.0.0')
+  port = int(config_server.get('--port', 5001))
+  bind_host = '127.0.0.1' if host == '0.0.0.0' else host
+
+  for i in range(retries):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+      s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+      try:
+        s.bind((bind_host, port))
+        return  # port is free
+      except OSError:
+        logger.info(f"Port {port} still in use, waiting ({i+1}/{retries})...")
+        time.sleep(delay)
+
+  raise RuntimeError(f"Port {port} did not become free after {retries} attempts.")
+
+
 def stop(process):
   try:
     if process.is_alive():
       logger.info("Terminating server process")
       process.terminate()
       process.join(timeout=2)
+      if process.is_alive():
+        process.kill()
+        process.join()
   except Exception:
     pass
 
 
 def _start_server_process(app_function, configs):
-
   logger.info("Starting server")
   run(app_function, configs)
 

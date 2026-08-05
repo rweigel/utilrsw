@@ -7,6 +7,7 @@ extras_require = {
     "svg": ["lxml"],
     "test": [],
     "time": [],
+    "uvicorn": ["uvicorn>=0.22"],
     "xprint": [],
     "scm": ["twine", "build"] + ([] if sys.version_info >= (3, 11) else ["tomli"]),
 }
