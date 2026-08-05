@@ -1,16 +1,3 @@
-from importlib.resources import path
-
-
-def write_atomic(path, data):
-
-  import os
-  import json
-  import pickle
-  import warnings
-
-  import numpy
-
-
 def write(fname, data, atomic=False, logger=None):
 
   import os
