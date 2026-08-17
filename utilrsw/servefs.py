@@ -1,3 +1,73 @@
+import itertools
+import sys
+import threading
+import time
+import traceback
+
+
+class RequestDiagnosticsMiddleware:
+  def __init__(self, asgi_app, logger, slow_request_seconds):
+    self.app = asgi_app
+    self.logger = logger
+    self.slow_request_seconds = slow_request_seconds
+    self.request_ids = itertools.count(1)
+
+  async def __call__(self, scope, receive, send):
+    if scope["type"] != "http":
+      await self.app(scope, receive, send)
+      return
+
+    request_id = next(self.request_ids)
+    started = time.monotonic()
+    method = scope.get("method", "-")
+    path = scope.get("path", "/")
+    query = scope.get("query_string", b"").decode("latin-1")
+    if query:
+      path += f"?{query}"
+    self.logger.info(f"request={request_id} started method={method} path={path}")
+
+    def warn_if_slow():
+      elapsed = time.monotonic() - started
+      thread_names = {thread.ident: thread.name for thread in threading.enumerate()}
+      stacks = []
+      for thread_id, frame in sys._current_frames().items():
+        name = thread_names.get(thread_id, "unknown")
+        stacks.append(
+          f"Thread {name} ({thread_id}):\n{''.join(traceback.format_stack(frame)).rstrip()}"
+        )
+      self.logger.warning(
+        f"request={request_id} still running after {elapsed:.1f}s "
+        f"method={method} path={path}\n" + "\n\n".join(stacks)
+      )
+
+    watchdog = threading.Timer(self.slow_request_seconds, warn_if_slow)
+    watchdog.daemon = True
+    watchdog.start()
+    status_code = 500
+    response_finished = False
+
+    async def send_diagnostics(message):
+      nonlocal status_code, response_finished
+      if message["type"] == "http.response.start":
+        status_code = message["status"]
+      await send(message)
+      if message["type"] == "http.response.body" and not message.get("more_body", False):
+        response_finished = True
+
+    try:
+      await self.app(scope, receive, send_diagnostics)
+    except Exception:
+      self.logger.exception(f"request={request_id} failed method={method} path={path}")
+      raise
+    finally:
+      watchdog.cancel()
+      elapsed = time.monotonic() - started
+      self.logger.info(
+        f"request={request_id} finished status={status_code} complete={response_finished} "
+        f"duration={elapsed:.3f}s method={method} path={path}"
+      )
+
+
 def servefs(config=None):
   """Serve a directory listing or a file using FastAPI.
 
@@ -54,11 +124,6 @@ def servefs(config=None):
   import pathlib
   import datetime
   import urllib.parse
-  import itertools
-  import sys
-  import threading
-  import time
-  import traceback
   from email.utils import format_datetime, parsedate_to_datetime
 
   from fastapi import FastAPI, HTTPException, Request, Response
@@ -85,7 +150,7 @@ def servefs(config=None):
   # Convert root to an absolute path
   root = os.path.abspath(root)
   logger.info(f"Serving files from root directory: {root}")
-  
+
   # Increase file descriptor limit if possible
   try:
     import resource
@@ -98,67 +163,11 @@ def servefs(config=None):
     logger.warning(f"Could not increase file descriptor limit: {e}", exc_info=True)
 
   app = FastAPI()
-  request_ids = itertools.count(1)
-
-  class RequestDiagnosticsMiddleware:
-    def __init__(self, asgi_app):
-      self.app = asgi_app
-
-    async def __call__(self, scope, receive, send):
-      if scope["type"] != "http":
-        await self.app(scope, receive, send)
-        return
-
-      request = Request(scope)
-      request_id = next(request_ids)
-      started = time.monotonic()
-      path = request.url.path
-      if request.url.query:
-        path += f"?{request.url.query}"
-      logger.info(f"request={request_id} started method={request.method} path={path}")
-
-      def warn_if_slow():
-        elapsed = time.monotonic() - started
-        thread_names = {thread.ident: thread.name for thread in threading.enumerate()}
-        stacks = []
-        for thread_id, frame in sys._current_frames().items():
-          name = thread_names.get(thread_id, "unknown")
-          stacks.append(
-            f"Thread {name} ({thread_id}):\n{''.join(traceback.format_stack(frame)).rstrip()}"
-          )
-        logger.warning(
-          f"request={request_id} still running after {elapsed:.1f}s "
-          f"method={request.method} path={path}\n" + "\n\n".join(stacks)
-        )
-
-      watchdog = threading.Timer(slow_request_seconds, warn_if_slow)
-      watchdog.daemon = True
-      watchdog.start()
-      status_code = 500
-      response_finished = False
-
-      async def send_diagnostics(message):
-        nonlocal status_code, response_finished
-        if message["type"] == "http.response.start":
-          status_code = message["status"]
-        await send(message)
-        if message["type"] == "http.response.body" and not message.get("more_body", False):
-          response_finished = True
-
-      try:
-        await self.app(scope, receive, send_diagnostics)
-      except Exception:
-        logger.exception(f"request={request_id} failed method={request.method} path={path}")
-        raise
-      finally:
-        watchdog.cancel()
-        elapsed = time.monotonic() - started
-        logger.info(
-          f"request={request_id} finished status={status_code} complete={response_finished} "
-          f"duration={elapsed:.3f}s method={request.method} path={path}"
-        )
-
-  app.add_middleware(RequestDiagnosticsMiddleware)
+  app.add_middleware(
+    RequestDiagnosticsMiddleware,
+    logger=logger,
+    slow_request_seconds=slow_request_seconds
+  )
 
   kwargs = {
     "allow_origins": ["*"],
@@ -360,4 +369,3 @@ _DIR_LISTING = """
   </body>
   </html>
   """
-
