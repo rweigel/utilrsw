@@ -228,7 +228,7 @@ def servefs(config=None):
     )
 
   @app.get("{path:path}", response_class=HTMLResponse)
-  async def serve_directory_or_file(request: Request, path: str = ""):
+  def serve_directory_or_file(request: Request, path: str = ""):
     """Serve directory listing or a file."""
 
     # Note that FastAPI handles paths such as "../../" and
@@ -278,7 +278,7 @@ def servefs(config=None):
     return response
 
   @app.head("{path:path}")
-  async def head_request(request: Request, path: str = ""):
+  def head_request(request: Request, path: str = ""):
       """Handle HEAD requests."""
       full_path = pathlib.Path(os.path.join(root, path[1:]))
 
