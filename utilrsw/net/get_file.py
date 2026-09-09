@@ -170,6 +170,13 @@ def get_conditional(url, file=None, gzip=False, stream=False, progress=False, lo
       if logger is not None:
         logger.info(f"Streamed: {downloaded_size} bytes to {file_tmp}")
 
+      try:
+        os.rename(file_tmp, file)
+      except Exception:
+        if os.path.exists(file_tmp):
+          os.remove(file_tmp)
+        raise
+
     else:
       # Read the entire file into memory and save it
       if logger is not None:
@@ -182,11 +189,6 @@ def get_conditional(url, file=None, gzip=False, stream=False, progress=False, lo
         if logger is not None:
           logger.info(f"Wrote: {file}")
 
-    try:
-      os.rename(file_tmp, file)
-    except Exception as e:
-      os.remove(file_tmp)
-      raise e
 
   elif response.status_code == 304:
     if logger is not None:
