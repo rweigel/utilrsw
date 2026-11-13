@@ -1,3 +1,4 @@
+import asyncio
 import itertools
 import sys
 import threading
@@ -40,9 +41,9 @@ class RequestDiagnosticsMiddleware:
         f"method={method} path={path}\n" + "\n\n".join(stacks)
       )
 
-    watchdog = threading.Timer(self.slow_request_seconds, warn_if_slow)
-    watchdog.daemon = True
-    watchdog.start()
+    watchdog = asyncio.get_running_loop().call_later(
+      self.slow_request_seconds, warn_if_slow
+    )
     status_code = 500
     response_finished = False
 
