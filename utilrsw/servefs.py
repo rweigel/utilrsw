@@ -83,6 +83,12 @@ def servefs(config=None):
   app : FastAPI application
       A FastAPI application that serves files from the specified root
 
+  Notes
+  -----
+  Paths resolving outside root, including symbolic links, are forbidden.
+  Directory listings omit symbolic links whose targets are outside root.
+  The served filesystem must not be writable by untrusted users.
+
   Example
   -------
   Using Uvicorn directly (if using only a single worker):
@@ -148,8 +154,7 @@ def servefs(config=None):
   root = config.get("root", ".")
   logger.setLevel(getattr(logging, config.get("log_level", "INFO").upper()))
   slow_request_seconds = config.get("slow_request_seconds", 10)
-  # Convert root to an absolute path
-  root = os.path.abspath(root)
+  root = pathlib.Path(root).resolve()
   logger.info(f"Serving files from root directory: {root}")
 
   # Increase file descriptor limit if possible
@@ -228,20 +233,26 @@ def servefs(config=None):
       user_agent
     )
 
-  @app.get("{path:path}", response_class=HTMLResponse)
-  def serve_directory_or_file(request: Request, path: str = ""):
-    """Serve directory listing or a file."""
-
-    # Note that FastAPI handles paths such as "../../" and
-    # prevents directory traversal attacks by returning a path of "/"
-    # if the path is not valid. For example, http://localhost:6001/../../"
-    # will return path = "/".
-
-    # path[1:] to remove leading slash
-    full_path = pathlib.Path(os.path.join(root, path[1:]))
+  def request_path(request, path):
+    # The route captures the leading URL slash; remove exactly one.
+    relative_path = pathlib.Path(path[1:])
+    try:
+      full_path = (root / relative_path).resolve()
+    except RuntimeError:
+      log_access(request, 404)
+      raise HTTPException(status_code=404, detail="File or directory not found") from None
+    if relative_path.is_absolute() or (full_path != root and root not in full_path.parents):
+      log_access(request, 403)
+      raise HTTPException(status_code=403, detail="Path outside serving root")
     logger.debug(f"Requested path: {path}")
     logger.debug(f"root path:      {root}")
     logger.debug(f"Resolved path:  {full_path}")
+    return full_path
+
+  @app.get("{path:path}", response_class=HTMLResponse)
+  def serve_directory_or_file(request: Request, path: str = ""):
+    """Serve directory listing or a file."""
+    full_path = request_path(request, path)
 
     if full_path.is_file():
       headers, last_modified = file_headers(full_path)
@@ -281,7 +292,7 @@ def servefs(config=None):
   @app.head("{path:path}")
   def head_request(request: Request, path: str = ""):
       """Handle HEAD requests."""
-      full_path = pathlib.Path(os.path.join(root, path[1:]))
+      full_path = request_path(request, path)
 
       # Add Last-Modified header for files
       if full_path.is_file():
@@ -314,13 +325,16 @@ def servefs(config=None):
     for name in items:
         fullname = pathlib.Path(full_path / name)
         try:
+            resolved = fullname.resolve()
+            if resolved != root and root not in resolved.parents:
+                continue
             # Call stat() once and reuse the result to minimize file descriptor usage
             stat_result = fullname.stat()
             size = stat_result.st_size
             mtime = stat_result.st_mtime
             is_dir = stat.S_ISDIR(stat_result.st_mode)
             is_symlink = fullname.is_symlink()
-        except (OSError, PermissionError):
+        except (OSError, RuntimeError):
             # Skip files that can't be accessed
             continue
 
