@@ -85,9 +85,12 @@ def servefs(config=None):
 
   Notes
   -----
-  Paths resolving outside root, including symbolic links, are forbidden.
-  Directory listings omit symbolic links whose targets are outside root.
-  The served filesystem must not be writable by untrusted users.
+  Symlinks resolving outside root are forbidden unless their final targets
+  are inside a directory in config["allowed_symlink_roots"] (default: []).
+  These directories are resolved at startup; relative paths use the current
+  working directory. Directory listings use the same target policy.
+  Absolute request paths and traversal outside root are forbidden.
+  All files beneath allowed roots should be considered public.
 
   Example
   -------
@@ -155,6 +158,15 @@ def servefs(config=None):
   logger.setLevel(getattr(logging, config.get("log_level", "INFO").upper()))
   slow_request_seconds = config.get("slow_request_seconds", 10)
   root = pathlib.Path(root).resolve()
+  allowed_symlink_roots = config.get("allowed_symlink_roots", [])
+  if not isinstance(allowed_symlink_roots, list):
+    raise TypeError("allowed_symlink_roots must be a list of directory paths")
+  allowed_roots = [root]
+  for directory in allowed_symlink_roots:
+    allowed_root = pathlib.Path(directory).resolve()
+    if not allowed_root.is_dir():
+      raise ValueError(f"allowed_symlink_roots entry is not a directory: {directory}")
+    allowed_roots.append(allowed_root)
   logger.info(f"Serving files from root directory: {root}")
 
   # Increase file descriptor limit if possible
@@ -233,17 +245,24 @@ def servefs(config=None):
       user_agent
     )
 
+  def target_is_allowed(full_path):
+    return any(full_path.is_relative_to(directory) for directory in allowed_roots)
+
   def request_path(request, path):
     # The route captures the leading URL slash; remove exactly one.
     relative_path = pathlib.Path(path[1:])
+    lexical_path = pathlib.Path(os.path.abspath(root / relative_path))
+    if relative_path.is_absolute() or not lexical_path.is_relative_to(root):
+      log_access(request, 403)
+      raise HTTPException(status_code=403)
     try:
       full_path = (root / relative_path).resolve()
     except RuntimeError:
       log_access(request, 404)
       raise HTTPException(status_code=404, detail="File or directory not found") from None
-    if relative_path.is_absolute() or (full_path != root and root not in full_path.parents):
+    if not target_is_allowed(full_path):
       log_access(request, 403)
-      raise HTTPException(status_code=403, detail="Path outside serving root")
+      raise HTTPException(status_code=403)
     logger.debug(f"Requested path: {path}")
     logger.debug(f"root path:      {root}")
     logger.debug(f"Resolved path:  {full_path}")
@@ -291,29 +310,29 @@ def servefs(config=None):
 
   @app.head("{path:path}")
   def head_request(request: Request, path: str = ""):
-      """Handle HEAD requests."""
-      full_path = request_path(request, path)
+    """Handle HEAD requests."""
+    full_path = request_path(request, path)
 
-      # Add Last-Modified header for files
-      if full_path.is_file():
-        headers, last_modified = file_headers(full_path)
-        if not_modified(request, last_modified):
-          response = Response(status_code=304, headers=headers)
-          log_access(request, response.status_code)
-          return response
-        response = FileResponse(full_path, headers=headers)
+    # Add Last-Modified header for files
+    if full_path.is_file():
+      headers, last_modified = file_headers(full_path)
+      if not_modified(request, last_modified):
+        response = Response(status_code=304, headers=headers)
         log_access(request, response.status_code)
         return response
-
-      # If the path is not a directory, raise a 404 error
-      if not full_path.is_dir():
-        log_access(request, 404)
-        raise HTTPException(status_code=404, detail="File or directory not found")
-
-      # For directories, return a generic response with no body
-      response = HTMLResponse(content="", headers={"Content-Type": "text/html"})
+      response = FileResponse(full_path, headers=headers)
       log_access(request, response.status_code)
       return response
+
+    # If the path is not a directory, raise a 404 error
+    if not full_path.is_dir():
+      log_access(request, 404)
+      raise HTTPException(status_code=404, detail="File or directory not found")
+
+    # For directories, return a generic response with no body
+    response = HTMLResponse(content="", headers={"Content-Type": "text/html"})
+    log_access(request, response.status_code)
+    return response
 
   DIR_LISTING = _DIR_LISTING.replace("\n  ", "\n")[1:]
 
@@ -323,36 +342,36 @@ def servefs(config=None):
     rows = []
 
     for name in items:
-        fullname = pathlib.Path(full_path / name)
-        try:
-            resolved = fullname.resolve()
-            if resolved != root and root not in resolved.parents:
-                continue
-            # Call stat() once and reuse the result to minimize file descriptor usage
-            stat_result = fullname.stat()
-            size = stat_result.st_size
-            mtime = stat_result.st_mtime
-            is_dir = stat.S_ISDIR(stat_result.st_mode)
-            is_symlink = fullname.is_symlink()
-        except (OSError, RuntimeError):
-            # Skip files that can't be accessed
-            continue
+      fullname = pathlib.Path(full_path / name)
+      try:
+        resolved = fullname.resolve() 
+        if not target_is_allowed(resolved):
+          continue
+        # Call stat() once and reuse the result to minimize file descriptor usage
+        stat_result = fullname.stat()
+        size = stat_result.st_size
+        mtime = stat_result.st_mtime
+        is_dir = stat.S_ISDIR(stat_result.st_mode)
+        is_symlink = fullname.is_symlink()
+      except (OSError, RuntimeError):
+        # Skip files that can't be accessed
+        continue
 
-        displayname = linkname = name
+      displayname = linkname = name
 
-        # Append / for directories or @ for symbolic links
-        if is_dir:
-            displayname = name + "/"
-            linkname = name + "/"
-        if is_symlink:
-            displayname = name + "@"
+      # Append / for directories or @ for symbolic links
+      if is_dir:
+          displayname = name + "/"
+          linkname = name + "/"
+      if is_symlink:
+          displayname = name + "@"
 
-        href = urllib.parse.quote(linkname, errors="surrogatepass")
-        text = html.escape(displayname, quote=False)
-        modified = datetime.datetime.fromtimestamp(mtime, tz=datetime.timezone.utc)
-        modified = modified.strftime('%Y-%m-%dT%H:%M:%SZ')
-        a = f'<a href="{href}">{text}</a>'
-        rows.append(f'      <tr><td>{a}</td><td>{size}</td><td>{modified}</td></tr>')
+      href = urllib.parse.quote(linkname, errors="surrogatepass")
+      text = html.escape(displayname, quote=False)
+      modified = datetime.datetime.fromtimestamp(mtime, tz=datetime.timezone.utc)
+      modified = modified.strftime('%Y-%m-%dT%H:%M:%SZ')
+      a = f'<a href="{href}">{text}</a>'
+      rows.append(f'      <tr><td>{a}</td><td>{size}</td><td>{modified}</td></tr>')
 
     # Replace placeholders in the template
     listing_html = DIR_LISTING.replace("__DIRECTORY__", server_path)
@@ -362,25 +381,25 @@ def servefs(config=None):
   return app
 
 _DIR_LISTING = """
-  <!DOCTYPE html>
-  <html lang="en">
-  <head>
-    <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
-    <title>__DIRECTORY__</title>
-  </head>
-  <body>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Size</th>
-          <th>Last Modified</th>
-        </tr>
-      </thead>
-      <tbody>
-        __DIRECTORY_HTML__
-      </tbody>
-    </table>
-  </body>
-  </html>
-  """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+  <title>__DIRECTORY__</title>
+</head>
+<body>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Size</th>
+        <th>Last Modified</th>
+      </tr>
+    </thead>
+    <tbody>
+      __DIRECTORY_HTML__
+    </tbody>
+  </table>
+</body>
+</html>
+"""
